@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SchoolRide — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0D1117;
+  --surface:#161B22;
+  --surface2:#1C2333;
+  --surface3:#21262D;
+  --border:#30363D;
+  --border2:#3D444D;
+  --gold:#F4B942;
+  --gold-dim:rgba(244,185,66,0.15);
+  --teal:#0FBA9B;
+  --teal-dim:rgba(15,186,155,0.12);
+  --blue:#4A9EF4;
+  --blue-dim:rgba(74,158,244,0.12);
+  --red:#F47067;
+  --red-dim:rgba(244,112,103,0.12);
+  --green:#3FB950;
+  --green-dim:rgba(63,185,80,0.12);
+  --text:#E6EDF3;
+  --text-mid:#8B949E;
+  --text-soft:#484F58;
+  --white:#ffffff;
+  --r-sm:6px;--r-md:10px;--r-lg:16px;
+}
+html,body{height:100%;font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
+
+/* ── LAYOUT ── */
+.shell{display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:0;overflow:hidden;
+}
+.sb-logo{
+  padding:1.1rem 1.2rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sb-logo-icon{
+  width:32px;height:32px;background:var(--gold);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+}
+.sb-logo-icon svg{width:18px;height:18px;}
+.sb-logo-text{font-family:'DM Serif Display',serif;font-size:15px;color:var(--text);line-height:1.1;}
+.sb-logo-sub{font-size:10px;color:var(--text-mid);font-weight:400;}
+
+.sb-section{padding:1rem 0.6rem 0.4rem;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-soft);}
+.sb-nav{padding:0 0.5rem;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:var(--r-sm);
+  font-size:13px;color:var(--text-mid);cursor:pointer;
+  transition:background 0.15s,color 0.15s;
+  margin-bottom:2px;position:relative;
+}
+.nav-item:hover{background:var(--surface3);color:var(--text);}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;}
+
+.sb-footer{margin-top:auto;padding:1rem;border-top:1px solid var(--border);}
+.admin-card{display:flex;align-items:center;gap:8px;}
+.admin-avatar{width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);flex-shrink:0;}
+.admin-info{flex:1;min-width:0;}
+.admin-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.admin-role{font-size:10px;color:var(--text-mid);}
+
+/* ── MAIN ── */
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* Topbar */
+.topbar{
+  height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.5rem;flex-shrink:0;
+}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.tb-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:var(--r-sm);font-family:'Sora',sans-serif;
+  font-size:12px;font-weight:600;cursor:pointer;border:none;transition:opacity 0.15s,transform 0.1s;
+}
+.tb-btn:active{transform:scale(0.97);}
+.tb-btn.primary{background:var(--gold);color:var(--bg);}
+.tb-btn.secondary{background:var(--surface3);color:var(--text-mid);border:1px solid var(--border);}
+.tb-btn svg{width:13px;height:13px;}
+
+/* Content area */
+.content{flex:1;overflow-y:auto;padding:1.5rem;}
+.content::-webkit-scrollbar{width:4px;}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* Page sections */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.4rem;}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:1rem 1.2rem;
+  transition:border-color 0.2s;
+}
+.stat-card:hover{border-color:var(--border2);}
+.sc-label{font-size:11px;color:var(--text-mid);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;}
+.sc-val{font-size:26px;font-weight:700;line-height:1;margin-bottom:4px;}
+.sc-val.gold{color:var(--gold);}
+.sc-val.teal{color:var(--teal);}
+.sc-val.blue{color:var(--blue);}
+.sc-val.red{color:var(--red);}
+.sc-sub{font-size:11px;color:var(--text-soft);}
+
+/* ── SECTION HEADER ── */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.sec-title{font-size:14px;font-weight:600;color:var(--text);}
+.sec-actions{display:flex;gap:8px;}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:1.4rem;}
+.tbl-search{
+  padding:0.8rem 1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.tbl-search input{
+  flex:1;background:var(--surface3);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:7px 12px;font-family:'Sora',sans-serif;
+  font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;
+}
+.tbl-search input:focus{border-color:var(--gold);}
+.tbl-search input::placeholder{color:var(--text-soft);}
+.filter-btn{
+  padding:7px 12px;background:var(--surface3);border:1px solid var(--border);
+  border-radius:var(--r-sm);font-size:12px;color:var(--text-mid);cursor:pointer;
+  white-space:nowrap;display:flex;align-items:center;gap:5px;
+  font-family:'Sora',sans-serif;transition:border-color 0.2s,color 0.2s;
+}
+.filter-btn:hover{border-color:var(--border2);color:var(--text);}
+.filter-btn.active{border-color:var(--gold);color:var(--gold);}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  padding:9px 14px;text-align:left;font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);
+  border-bottom:1px solid var(--border);background:var(--surface2);
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:10px 14px;font-size:13px;color:var(--text-mid);}
+tbody td:first-child{color:var(--text);font-weight:500;}
+
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;}
+.badge.active{background:var(--green-dim);color:var(--green);}
+.badge.pending{background:var(--gold-dim);color:var(--gold);}
+.badge.inactive{background:var(--red-dim);color:var(--red);}
+.badge.assigned{background:var(--teal-dim);color:var(--teal);}
+.badge.unassigned{background:var(--red-dim);color:var(--red);}
+
+.row-action{
+  font-size:12px;color:var(--blue);cursor:pointer;
+  background:none;border:none;font-family:'Sora',sans-serif;
+  padding:3px 8px;border-radius:4px;transition:background 0.15s;
+}
+.row-action:hover{background:var(--blue-dim);}
+.row-action.del{color:var(--red);}
+.row-action.del:hover{background:var(--red-dim);}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.4rem;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;}
+.panel-head{padding:0.8rem 1.1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-size:13px;font-weight:600;color:var(--text);}
+.panel-body{padding:1rem 1.1rem;}
+
+/* Route card */
+.route-card{
+  display:flex;align-items:center;gap:12px;
+  padding:10px;border-radius:var(--r-sm);
+  border:1px solid var(--border);margin-bottom:8px;cursor:pointer;
+  transition:border-color 0.15s,background 0.15s;
+}
+.route-card:hover{border-color:var(--border2);background:var(--surface2);}
+.route-card.selected{border-color:var(--gold);background:var(--gold-dim);}
+.route-num{width:36px;height:36px;border-radius:8px;background:var(--surface3);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold);flex-shrink:0;}
+.route-info{flex:1;}
+.route-name{font-size:13px;font-weight:600;color:var(--text);}
+.route-meta{font-size:11px;color:var(--text-mid);margin-top:1px;}
+.route-count{font-size:12px;font-weight:600;color:var(--teal);}
+
+/* Stop list in panel */
+.stop-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.stop-row:last-child{border-bottom:none;}
+.stop-num{width:22px;height:22px;border-radius:50%;background:var(--surface3);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text-mid);flex-shrink:0;}
+.stop-name-txt{flex:1;color:var(--text);}
+.stop-time-txt{font-size:12px;color:var(--text-mid);white-space:nowrap;}
+.stop-drag{color:var(--text-soft);cursor:grab;font-size:14px;margin-left:4px;}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;opacity:0;pointer-events:none;transition:opacity 0.2s;
+}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r-lg);padding:0;width:100%;max-width:480px;
+  transform:translateY(16px) scale(0.98);transition:transform 0.25s cubic-bezier(0.34,1.2,0.64,1);
+  max-height:90vh;overflow-y:auto;
+}
+.modal-overlay.show .modal{transform:translateY(0) scale(1);}
+.modal-head{padding:1.2rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:15px;font-weight:600;color:var(--text);}
+.modal-close{background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:4px;transition:background 0.15s;}
+.modal-close:hover{background:var(--surface3);}
+.modal-body{padding:1.3rem 1.4rem;}
+.modal-foot{padding:1rem 1.4rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+/* Form */
+.form-group{margin-bottom:1rem;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-group label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-mid);margin-bottom:6px;}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:8px 12px;font-family:'Sora',sans-serif;
+  font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold);}
+.form-group input::placeholder{color:var(--text-soft);}
+.form-group textarea{resize:vertical;min-height:70px;}
+.form-group select option{background:var(--surface2);}
+
+/* Btn styles */
+.btn{padding:8px 16px;border-radius:var(--r-sm);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity 0.15s,transform 0.1s;}
+.btn:active{transform:scale(0.97);}
+.btn.primary{background:var(--gold);color:var(--bg);}
+.btn.ghost{background:var(--surface3);color:var(--text-mid);border:1px solid var(--border);}
+.btn.danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(244,112,103,0.3);}
+
+/* Fleet cards */
+.fleet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.fleet-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:1rem;
+}
+.fleet-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.fleet-num{font-size:15px;font-weight:700;color:var(--text);}
+.fleet-body{font-size:12px;color:var(--text-mid);margin-bottom:6px;}
+.fleet-bar{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:6px;}
+.fleet-fill{height:100%;border-radius:2px;background:var(--teal);}
+.fleet-cap{font-size:11px;color:var(--text-soft);}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:20px;right:20px;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-left:3px solid var(--teal);
+  border-radius:var(--r-md);padding:12px 16px;
+  font-size:13px;color:var(--text);z-index:999;
+  transform:translateY(60px);opacity:0;transition:transform 0.3s,opacity 0.3s;
+  max-width:280px;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.error{border-left-color:var(--red);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L5 5H19L21 11V17H19V19H17V17H7V19H5V17H3V11Z" fill="#0D1117"/><rect x="6" y="12" width="3" height="3" rx="1" fill="#0D1117" opacity=".5"/><rect x="15" y="12" width="3" height="3" rx="1" fill="#0D1117" opacity=".5"/><path d="M5 11H19" stroke="#0D1117" stroke-width="1.2"/></svg>
+      </div>
+      <div>
+        <div class="sb-logo-text">SchoolRide</div>
+        <div class="sb-logo-sub">Admin Console</div>
+      </div>
+    </div>
+
+    <div class="sb-section">Overview</div>
+    <div class="sb-nav">
+      <div class="nav-item active" onclick="showPage('dashboard',this)">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".8"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".4"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".8"/></svg>
+        Dashboard
+      </div>
+    </div>
+
+    <div class="sb-section">Management</div>
+    <div class="sb-nav">
+      <div class="nav-item" onclick="showPage('students',this)">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3.31 2.686-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Students
+        <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" onclick="showPage('routes',this)">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 13V6l5-4 5 4v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="6" y="9" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Routes & Stops
+      </div>
+      <div class="nav-item" onclick="showPage('fleet',this)">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M1 7l2-4h10l2 4v4h-1.5v1h-1.5v-1h-7v1H4V11H1V7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="3.5" y="8" width="2" height="2" rx=".5" fill="currentColor" opacity=".7"/><rect x="10.5" y="8" width="2" height="2" rx=".5" fill="currentColor" opacity=".7"/></svg>
+        Fleet
+      </div>
+      <div class="nav-item" onclick="showPage('alerts',this)">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5a5 5 0 0 1 5 5v2.5l1 2H2l1-2V6.5a5 5 0 0 1 5-5z" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3"/></svg>
+        Alerts
+        <span class="nav-badge">2</span>
+      </div>
+    </div>
+
+    <div class="sb-section">System</div>
+    <div class="sb-nav">
+      <div class="nav-item" onclick="showPage('settings',this)">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Settings
+      </div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="admin-card">
+        <div class="admin-avatar">RA</div>
+        <div class="admin-info">
+          <div class="admin-name">R. Adams</div>
+          <div class="admin-role">Transport Board Admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-right">
+        <button class="tb-btn secondary" onclick="showToast('Exported to CSV','ok')">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Export
+        </button>
+        <button class="tb-btn primary" id="primary-action-btn" onclick="openAddModal()">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Add Student
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════ DASHBOARD PAGE ══════════ -->
+      <div class="page active" id="page-dashboard">
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="sc-label">Total Students</div>
+            <div class="sc-val gold" id="stat-students">1,284</div>
+            <div class="sc-sub">Across 7 schools</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">Active Routes</div>
+            <div class="sc-val teal">18</div>
+            <div class="sc-sub">All parishes covered</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">Buses On Road</div>
+            <div class="sc-val blue">14 / 18</div>
+            <div class="sc-sub">4 in maintenance</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">Unassigned</div>
+            <div class="sc-val red" id="stat-unassigned">3</div>
+            <div class="sc-sub">Need route assignment</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">Recent Assignments</span>
+              <button class="row-action" onclick="showPage('students', document.querySelector('[onclick*=students]'))">View all</button>
+            </div>
+            <div class="panel-body" style="padding:0;">
+              <table style="width:100%;">
+                <thead><tr>
+                  <th>Student</th><th>Route</th><th>Stop</th><th>Status</th>
+                </tr></thead>
+                <tbody id="recent-tbody">
+                  <tr><td>Alicia Morrison</td><td>Route 12</td><td>Clapham Main Rd</td><td><span class="badge assigned">Assigned</span></td></tr>
+                  <tr><td>Marcus Cumberbatch</td><td>Route 5</td><td>Oistins Bay Garden</td><td><span class="badge assigned">Assigned</span></td></tr>
+                  <tr><td>Janelle Blackman</td><td>—</td><td>—</td><td><span class="badge unassigned">Unassigned</span></td></tr>
+                  <tr><td>Ryan Inniss</td><td>Route 9</td><td>Haggatt Hall</td><td><span class="badge assigned">Assigned</span></td></tr>
+                  <tr><td>Talia Forde</td><td>—</td><td>—</td><td><span class="badge unassigned">Unassigned</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title">Active Alerts</span><span style="font-size:11px;color:var(--red);">● 2 live</span></div>
+            <div class="panel-body">
+              <div style="border:1px solid rgba(244,112,103,0.25);background:var(--red-dim);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;">
+                <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:3px;">Route 12 — Delay Warning</div>
+                <div style="font-size:12px;color:var(--text-mid);">ABC Hwy roadworks near Warrens causing ~3 min delay. Sent to 94 students.</div>
+                <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">Today 5:42 AM</div>
+              </div>
+              <div style="border:1px solid rgba(244,185,66,0.2);background:var(--gold-dim);border-radius:var(--r-sm);padding:10px 12px;">
+                <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:3px;">Route 7 — Driver Absent</div>
+                <div style="font-size:12px;color:var(--text-mid);">Replacement driver TB-6012 assigned. Departure delayed by 8 min.</div>
+                <div style="font-size:11px;color:var(--text-soft);margin-top:4px;">Today 6:01 AM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:1.4rem;">
+          <div class="panel-head"><span class="panel-title">Schools Overview</span></div>
+          <div class="panel-body" style="padding:0;">
+            <table style="width:100%;">
+              <thead><tr><th>School</th><th>Students</th><th>Routes</th><th>Unassigned</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Harrison College</td><td>312</td><td>4</td><td>0</td><td><span class="badge active">All Covered</span></td></tr>
+                <tr><td>Queen's College</td><td>287</td><td>3</td><td>1</td><td><span class="badge pending">1 Pending</span></td></tr>
+                <tr><td>Combermere School</td><td>241</td><td>4</td><td>0</td><td><span class="badge active">All Covered</span></td></tr>
+                <tr><td>The St. Michael School</td><td>198</td><td>3</td><td>2</td><td><span class="badge pending">2 Pending</span></td></tr>
+                <tr><td>Lodge School</td><td>142</td><td>2</td><td>0</td><td><span class="badge active">All Covered</span></td></tr>
+                <tr><td>Barbados High School</td><td>104</td><td>2</td><td>0</td><td><span class="badge active">All Covered</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ STUDENTS PAGE ══════════ -->
+      <div class="page" id="page-students">
+        <div class="sec-header">
+          <div class="sec-title">Student Registry</div>
+          <div class="sec-actions">
+            <button class="tb-btn secondary" onclick="showToast('Import template downloaded','ok')">Import CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="tbl-search">
+            <input type="text" placeholder="Search by name, ID, or school…" id="student-search" oninput="filterStudents()"/>
+            <button class="filter-btn active" onclick="filterByStatus('all',this)">All</button>
+            <button class="filter-btn" onclick="filterByStatus('assigned',this)">Assigned</button>
+            <button class="filter-btn" onclick="filterByStatus('unassigned',this)">Unassigned</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Student ID</th><th>School</th><th>Form</th><th>Route</th><th>Stop</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="students-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ ROUTES PAGE ══════════ -->
+      <div class="page" id="page-routes">
+        <div class="two-col">
+          <div>
+            <div class="sec-header">
+              <div class="sec-title">All Routes</div>
+              <button class="tb-btn primary" onclick="openRouteModal()" style="font-size:12px;padding:6px 12px;">+ New Route</button>
+            </div>
+            <div id="route-list"></div>
+          </div>
+          <div>
+            <div class="sec-header"><div class="sec-title" id="route-detail-title">Select a route</div></div>
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">Stops</span>
+                <button class="row-action" onclick="openStopModal()">+ Add stop</button>
+              </div>
+              <div class="panel-body" style="padding:0 1.1rem;" id="route-stops-list">
+                <div style="padding:2rem 0;text-align:center;color:var(--text-soft);font-size:13px;">Select a route to view stops</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ FLEET PAGE ══════════ -->
+      <div class="page" id="page-fleet">
+        <div class="sec-header"><div class="sec-title">Fleet Overview</div>
+          <button class="tb-btn primary" style="font-size:12px;padding:6px 12px;" onclick="showToast('Add bus modal coming soon','ok')">+ Add Bus</button>
+        </div>
+        <div class="fleet-grid" id="fleet-grid"></div>
+      </div>
+
+      <!-- ══════════ ALERTS PAGE ══════════ -->
+      <div class="page" id="page-alerts">
+        <div class="sec-header"><div class="sec-title">Send Alert</div></div>
+        <div class="panel" style="max-width:600px;margin-bottom:1.4rem;">
+          <div class="panel-head"><span class="panel-title">New Alert / Notification</span></div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label>Alert Type</label>
+              <select>
+                <option>Delay warning</option>
+                <option>Route change</option>
+                <option>Cancellation</option>
+                <option>Driver change</option>
+                <option>General notice</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Affected Route</label>
+                <select>
+                  <option>All routes</option>
+                  <option>Route 12 — North</option>
+                  <option>Route 5 — South</option>
+                  <option>Route 7 — East</option>
+                  <option>Route 9 — Central</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Channel</label>
+                <select>
+                  <option>App + SMS</option>
+                  <option>App only</option>
+                  <option>SMS only</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Message</label>
+              <textarea placeholder="e.g. Route 12 will be approximately 5 minutes late today due to roadworks near Warrens. Please be at your stop by 6:45 AM."></textarea>
+            </div>
+            <button class="btn primary" onclick="showToast('Alert sent to 94 students via App + SMS','ok')">Send Alert</button>
+          </div>
+        </div>
+
+        <div class="sec-header"><div class="sec-title">Alert History</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Type</th><th>Route</th><th>Message</th><th>Sent to</th><th>Channel</th></tr></thead>
+            <tbody>
+              <tr><td>Today 5:42 AM</td><td><span class="badge pending">Delay</span></td><td>Route 12</td><td>Roadworks near Warrens, ~3 min delay</td><td>94</td><td>App + SMS</td></tr>
+              <tr><td>Today 6:01 AM</td><td><span class="badge inactive">Driver change</span></td><td>Route 7</td><td>Replacement driver assigned, 8 min delay</td><td>67</td><td>App + SMS</td></tr>
+              <tr><td>Apr 10</td><td><span class="badge assigned">Stop update</span></td><td>Route 12</td><td>Clapham stop moved 50m south to shelter</td><td>94</td><td>App</td></tr>
+              <tr><td>Apr 8</td><td><span class="badge inactive">Cancellation</span></td><td>Route 3</td><td>Bus mechanical issue — no service today</td><td>52</td><td>App + SMS</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ SETTINGS PAGE ══════════ -->
+      <div class="page" id="page-settings">
+        <div class="panel" style="max-width:540px;">
+          <div class="panel-head"><span class="panel-title">System Settings</span></div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label>Academic Year</label>
+              <select><option>2024–2025</option><option>2025–2026</option></select>
+            </div>
+            <div class="form-group">
+              <label>Term</label>
+              <select><option>Term 2 (Jan–Apr)</option><option>Term 3 (Apr–Jul)</option></select>
+            </div>
+            <div class="form-group">
+              <label>Default pick-up buffer (minutes before school)</label>
+              <input type="number" value="30"/>
+            </div>
+            <div class="form-group">
+              <label>SMS Provider API Key</label>
+              <input type="password" value="sk-live-••••••••••••••••"/>
+            </div>
+            <div class="form-group">
+              <label>Transport Board contact number</label>
+              <input type="text" value="246-436-6820"/>
+            </div>
+            <button class="btn primary" onclick="showToast('Settings saved','ok')">Save Settings</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-area -->
+</div><!-- /shell -->
+
+<!-- ══ ADD / EDIT STUDENT MODAL ══ -->
+<div class="modal-overlay" id="modal-student">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="modal-student-title">Add Student</span>
+      <button class="modal-close" onclick="closeModal('modal-student')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input type="text" id="f-first" placeholder="e.g. Alicia"/></div>
+        <div class="form-group"><label>Last Name</label><input type="text" id="f-last" placeholder="e.g. Morrison"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Student ID</label><input type="text" id="f-id" placeholder="BJS-2024-XXXXX"/></div>
+        <div class="form-group"><label>Form</label><input type="text" id="f-form" placeholder="e.g. 4B"/></div>
+      </div>
+      <div class="form-group">
+        <label>School</label>
+        <select id="f-school">
+          <option value="">— Select school —</option>
+          <option>Harrison College</option>
+          <option>Queen's College</option>
+          <option>Combermere School</option>
+          <option>The St. Michael School</option>
+          <option>Lodge School</option>
+          <option>Barbados High School</option>
+          <option>Ellerslie Secondary</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Home Address</label>
+        <input type="text" id="f-addr" placeholder="e.g. 14 Clapham Heights, St. Michael"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Assigned Route</label>
+          <select id="f-route">
+            <option value="">— Unassigned —</option>
+            <option>Route 12 — North</option>
+            <option>Route 5 — South</option>
+            <option>Route 7 — East</option>
+            <option>Route 9 — Central</option>
+            <option>Route 3 — West</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Pick-up Stop</label>
+          <select id="f-stop">
+            <option value="">— Select stop —</option>
+            <option>Clapham Main Rd</option>
+            <option>Speightstown Terminal</option>
+            <option>Holetown, 1st Ave</option>
+            <option>Oistins Bay Garden</option>
+            <option>Haggatt Hall</option>
+            <option>Six Men's Bay</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal('modal-student')">Cancel</button>
+      <button class="btn primary" onclick="saveStudent()">Save Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD ROUTE MODAL ══ -->
+<div class="modal-overlay" id="modal-route">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">New Route</span>
+      <button class="modal-close" onclick="closeModal('modal-route')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Route Number</label><input type="text" placeholder="e.g. 14"/></div>
+        <div class="form-group"><label>Direction</label><select><option>North</option><option>South</option><option>East</option><option>West</option><option>Central</option></select></div>
+      </div>
+      <div class="form-group"><label>Route Name</label><input type="text" placeholder="e.g. Route 14 — North East"/></div>
+      <div class="form-group"><label>Terminus (start)</label><input type="text" placeholder="e.g. Speightstown Terminal"/></div>
+      <div class="form-group"><label>School Destination</label><select id="route-school"><option>Harrison College</option><option>Queen's College</option><option>Combermere School</option><option>The St. Michael School</option><option>Lodge School</option></select></div>
+      <div class="form-row">
+        <div class="form-group"><label>Departure time</label><input type="time" value="06:10"/></div>
+        <div class="form-group"><label>Assigned Bus</label><select><option>R-47</option><option>R-12</option><option>R-28</option><option>R-33</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal('modal-route')">Cancel</button>
+      <button class="btn primary" onclick="saveRoute()">Create Route</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD STOP MODAL ══ -->
+<div class="modal-overlay" id="modal-stop">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Add Stop</span>
+      <button class="modal-close" onclick="closeModal('modal-stop')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Stop Name</label><input type="text" placeholder="e.g. Paynes Bay Shelter"/></div>
+      <div class="form-group"><label>Parish</label><select><option>St. Michael</option><option>St. James</option><option>St. Peter</option><option>Christ Church</option><option>St. Philip</option><option>St. George</option><option>St. Andrew</option><option>St. Joseph</option><option>St. John</option><option>St. Thomas</option><option>St. Lucy</option></select></div>
+      <div class="form-row">
+        <div class="form-group"><label>Latitude</label><input type="text" placeholder="13.1939"/></div>
+        <div class="form-group"><label>Longitude</label><input type="text" placeholder="-59.5432"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Scheduled time</label><input type="time" value="06:40"/></div>
+        <div class="form-group"><label>Type</label><select><option>Standard</option><option>Shelter</option><option>Terminal</option><option>School gate</option></select></div>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea placeholder="e.g. Covered shelter, near gas station"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal('modal-stop')">Cancel</button>
+      <button class="btn primary" onclick="saveStop()">Add Stop</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+let students = [
+  {id:'BJS-2024-04821',first:'Alicia',last:'Morrison',school:'Harrison College',form:'4B',addr:'14 Clapham Heights, St. Michael',route:'Route 12',stop:'Clapham Main Rd'},
+  {id:'BJS-2024-03312',first:'Marcus',last:'Cumberbatch',school:'Combermere School',form:'5A',addr:'Oistins, Christ Church',route:'Route 5',stop:'Oistins Bay Garden'},
+  {id:'BJS-2024-05501',first:'Janelle',last:'Blackman',school:'Queen\'s College',form:'3C',addr:'Eagle Hall, St. Michael',route:'',stop:''},
+  {id:'BJS-2024-02198',first:'Ryan',last:'Inniss',school:'Harrison College',form:'6L',addr:'Haggatt Hall, St. Michael',route:'Route 9',stop:'Haggatt Hall'},
+  {id:'BJS-2024-06743',first:'Talia',last:'Forde',school:'The St. Michael School',form:'2B',addr:'Black Rock, St. Michael',route:'',stop:''},
+  {id:'BJS-2024-01034',first:'Dario',last:'Alleyne',school:'Lodge School',form:'4D',addr:'Six Men\'s Bay, St. Peter',route:'Route 12',stop:'Six Men\'s Bay'},
+  {id:'BJS-2024-07812',first:'Kezia',last:'Springer',school:'Barbados High School',form:'5E',addr:'Holetown, St. James',route:'Route 12',stop:'Holetown, 1st Ave'},
+  {id:'BJS-2024-09021',first:'Omari',last:'Brathwaite',school:'Queen\'s College',form:'3A',addr:'Fontabelle, St. Michael',route:'',stop:''},
+];
+
+const routes = [
+  {num:'12',name:'Route 12 — North',terminus:'Speightstown Terminal',school:'Harrison College',bus:'R-47',students:94,
+   stops:[
+    {n:'Speightstown Terminal',t:'6:10 AM'},{n:"Six Men's Bay",t:'6:20 AM'},{n:'Holetown, 1st Ave',t:'6:32 AM'},
+    {n:'Paynes Bay',t:'6:40 AM'},{n:'Clapham Main Rd',t:'6:47 AM'},{n:'Fontabelle',t:'6:58 AM'},{n:'Harrison College',t:'7:25 AM'}
+  ]},
+  {num:'5',name:'Route 5 — South',terminus:'Oistins Market',school:'Combermere School',bus:'R-12',students:67,
+   stops:[{n:'Oistins Market',t:'6:05 AM'},{n:'Silver Sands',t:'6:15 AM'},{n:'Enterprise',t:'6:25 AM'},{n:'Combermere School',t:'7:00 AM'}]},
+  {num:'7',name:'Route 7 — East',terminus:'Six Roads Roundabout',school:"Queen's College",bus:'R-28',students:52,
+   stops:[{n:'Six Roads',t:'6:00 AM'},{n:'Villa Nova',t:'6:12 AM'},{n:'Gall Hill',t:'6:24 AM'},{n:"Queen's College",t:'7:10 AM'}]},
+  {num:'9',name:'Route 9 — Central',terminus:'Haggatt Hall',school:'Harrison College',bus:'R-33',students:81,
+   stops:[{n:'Haggatt Hall',t:'6:20 AM'},{n:'Eagle Hall',t:'6:28 AM'},{n:'Wildey',t:'6:36 AM'},{n:'Harrison College',t:'7:05 AM'}]},
+];
+
+const fleet = [
+  {num:'R-47',route:'Route 12',cap:30,occ:28,status:'active',driver:'C. Alleyne'},
+  {num:'R-12',route:'Route 5',cap:30,occ:24,status:'active',driver:'J. Prescod'},
+  {num:'R-28',route:'Route 7',cap:25,occ:18,status:'active',driver:'P. Cumberbatch'},
+  {num:'R-33',route:'Route 9',cap:30,occ:27,status:'active',driver:'M. Walcott'},
+  {num:'R-15',route:'Route 3',cap:20,occ:0,status:'maintenance',driver:'—'},
+  {num:'R-22',route:'Route 6',cap:30,occ:22,status:'active',driver:'T. Holder'},
+  {num:'R-41',route:'Route 11',cap:30,occ:19,status:'active',driver:'A. Nurse'},
+  {num:'R-09',route:'—',cap:30,occ:0,status:'maintenance',driver:'—'},
+  {num:'R-55',route:'Route 14',cap:25,occ:20,status:'active',driver:'R. Clarke'},
+];
+
+let currentFilter = 'all';
+let editingIndex = -1;
+
+// ── PAGE NAVIGATION ──
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+
+  const titles = {dashboard:'Dashboard',students:'Student Registry',routes:'Routes & Stops',fleet:'Fleet Management',alerts:'Alerts & Notifications',settings:'Settings'};
+  document.getElementById('page-title').textContent = titles[name] || name;
+
+  const btnLabels = {students:'Add Student',routes:'Add Route',fleet:'Add Bus',alerts:'Send Alert',dashboard:''};
+  const btn = document.getElementById('primary-action-btn');
+  btn.textContent = '';
+  if (btnLabels[name]) {
+    btn.innerHTML = `<svg viewBox="0 0 14 14" fill="none" style="width:13px;height:13px;"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> ${btnLabels[name]}`;
+    btn.style.display = 'flex';
+    btn.onclick = name === 'students' ? openAddModal : name === 'routes' ? openRouteModal : () => showToast('Coming soon','ok');
+  } else {
+    btn.style.display = 'none';
+  }
+
+  if (name === 'students') renderStudents();
+  if (name === 'routes') renderRoutes();
+  if (name === 'fleet') renderFleet();
+}
+
+// ── STUDENTS ──
+function renderStudents(filter) {
+  const q = document.getElementById('student-search').value.toLowerCase();
+  const f = filter || currentFilter;
+  const tbody = document.getElementById('students-tbody');
+  tbody.innerHTML = '';
+  students.forEach((s, i) => {
+    const assigned = !!s.route;
+    if (f === 'assigned' && !assigned) return;
+    if (f === 'unassigned' && assigned) return;
+    const name = s.first + ' ' + s.last;
+    if (q && !name.toLowerCase().includes(q) && !s.id.toLowerCase().includes(q) && !s.school.toLowerCase().includes(q)) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td style="color:var(--text-soft);font-size:12px;">${s.id}</td>
+      <td>${s.school}</td>
+      <td>${s.form}</td>
+      <td>${s.route || '<span style="color:var(--text-soft)">—</span>'}</td>
+      <td>${s.stop || '<span style="color:var(--text-soft)">—</span>'}</td>
+      <td><span class="badge ${assigned?'assigned':'unassigned'}">${assigned?'Assigned':'Unassigned'}</span></td>
+      <td>
+        <button class="row-action" onclick="editStudent(${i})">Edit</button>
+        <button class="row-action del" onclick="deleteStudent(${i})">Remove</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  if (!tbody.children.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-soft);">No students found</td></tr>';
+  }
+}
+
+function filterStudents() { renderStudents(); }
+
+function filterByStatus(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStudents();
+}
+
+function editStudent(i) {
+  editingIndex = i;
+  const s = students[i];
+  document.getElementById('modal-student-title').textContent = 'Edit Student';
+  document.getElementById('f-first').value = s.first;
+  document.getElementById('f-last').value = s.last;
+  document.getElementById('f-id').value = s.id;
+  document.getElementById('f-form').value = s.form;
+  document.getElementById('f-school').value = s.school;
+  document.getElementById('f-addr').value = s.addr;
+  document.getElementById('f-route').value = s.route ? routes.find(r=>r.name===s.route+' — North'||r.name===s.route)?.name || s.route : '';
+  document.getElementById('f-stop').value = s.stop;
+  openModal('modal-student');
+}
+
+function deleteStudent(i) {
+  students.splice(i, 1);
+  document.getElementById('stat-students').textContent = (1284 - (8 - students.length));
+  document.getElementById('stat-unassigned').textContent = students.filter(s=>!s.route).length;
+  renderStudents();
+  showToast('Student removed','ok');
+}
+
+function openAddModal() {
+  editingIndex = -1;
+  document.getElementById('modal-student-title').textContent = 'Add Student';
+  ['f-first','f-last','f-id','f-form','f-addr'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-school').value = '';
+  document.getElementById('f-route').value = '';
+  document.getElementById('f-stop').value = '';
+  openModal('modal-student');
+}
+
+function saveStudent() {
+  const first = document.getElementById('f-first').value.trim();
+  const last  = document.getElementById('f-last').value.trim();
+  const id    = document.getElementById('f-id').value.trim();
+  if (!first || !last || !id) { showToast('Please fill required fields','err'); return; }
+  const s = {
+    first, last, id,
+    form:   document.getElementById('f-form').value,
+    school: document.getElementById('f-school').value,
+    addr:   document.getElementById('f-addr').value,
+    route:  document.getElementById('f-route').value.split(' — ')[0],
+    stop:   document.getElementById('f-stop').value,
+  };
+  if (editingIndex >= 0) {
+    students[editingIndex] = s;
+    showToast(`${first} ${last} updated`,'ok');
+  } else {
+    students.unshift(s);
+    showToast(`${first} ${last} added`,'ok');
+  }
+  document.getElementById('stat-unassigned').textContent = students.filter(s=>!s.route).length;
+  closeModal('modal-student');
+  renderStudents();
+}
+
+// ── ROUTES ──
+let selectedRoute = null;
+function renderRoutes() {
+  const list = document.getElementById('route-list');
+  list.innerHTML = '';
+  routes.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'route-card' + (selectedRoute === i ? ' selected' : '');
+    div.onclick = () => selectRoute(i);
+    div.innerHTML = `
+      <div class="route-num">${r.num}</div>
+      <div class="route-info">
+        <div class="route-name">${r.name}</div>
+        <div class="route-meta">${r.terminus} → ${r.school} · Bus ${r.bus}</div>
+      </div>
+      <div class="route-count">${r.students}</div>`;
+    list.appendChild(div);
+  });
+}
+
+function selectRoute(i) {
+  selectedRoute = i;
+  renderRoutes();
+  const r = routes[i];
+  document.getElementById('route-detail-title').textContent = r.name;
+  const ul = document.getElementById('route-stops-list');
+  ul.innerHTML = r.stops.map((s,j) => `
+    <div class="stop-row">
+      <div class="stop-num">${j+1}</div>
+      <div class="stop-name-txt">${s.n}</div>
+      <div class="stop-time-txt">${s.t}</div>
+      <span class="stop-drag" title="Drag to reorder">⠿</span>
+    </div>`).join('');
+}
+
+function openRouteModal() { openModal('modal-route'); }
+
+function saveRoute() {
+  showToast('Route created successfully','ok');
+  closeModal('modal-route');
+}
+
+function openStopModal() {
+  if (selectedRoute === null) { showToast('Select a route first','err'); return; }
+  openModal('modal-stop');
+}
+
+function saveStop() {
+  showToast('Stop added to route','ok');
+  closeModal('modal-stop');
+}
+
+// ── FLEET ──
+function renderFleet() {
+  const grid = document.getElementById('fleet-grid');
+  grid.innerHTML = fleet.map(b => {
+    const pct = b.cap > 0 ? Math.round(b.occ / b.cap * 100) : 0;
+    const active = b.status === 'active';
+    return `<div class="fleet-card">
+      <div class="fleet-top">
+        <div class="fleet-num">${b.num}</div>
+        <span class="badge ${active ? 'active' : 'inactive'}">${active ? 'Active' : 'Maintenance'}</span>
+      </div>
+      <div class="fleet-body">${b.route} · Driver: ${b.driver}</div>
+      <div class="fleet-bar"><div class="fleet-fill" style="width:${pct}%;background:${pct>85?'var(--red)':pct>60?'var(--gold)':'var(--teal)'};"></div></div>
+      <div class="fleet-cap">${b.occ}/${b.cap} seats · ${pct}% full</div>
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL HELPERS ──
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); });
+});
+
+// ── TOAST ──
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type === 'err' ? ' error' : '') + ' show';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──
+renderStudents();
+</script>
+</body>
+</html>

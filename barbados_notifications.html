@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SchoolRide — Notifications System</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#002D62;--navy-mid:#003F87;--navy-light:#1A5FA8;
+  --gold:#F4B942;--gold-soft:#FDF3D9;--gold-mid:#E8A820;
+  --teal:#0B7C6E;--teal-soft:#E6F9F3;--teal-mid:#0A6B5F;
+  --coral:#E8523A;--coral-soft:#FDECEA;
+  --sky:#EBF4FF;--sky-mid:#B8D6F5;
+  --cream:#FEFCF7;--sand:#F7F0E0;--stone:#EEE8D9;
+  --text:#1C1C2E;--text-mid:#4A5568;--text-soft:#8896A5;--text-ghost:#BCC4CE;
+  --white:#FFFFFF;
+  --r-xs:4px;--r-sm:8px;--r-md:14px;--r-lg:20px;--r-xl:28px;
+  --shadow-sm:0 2px 8px rgba(0,45,98,0.08);
+  --shadow-md:0 4px 20px rgba(0,45,98,0.10);
+  --shadow-lg:0 8px 40px rgba(0,45,98,0.14);
+  --shadow-float:0 16px 56px rgba(0,45,98,0.18);
+}
+
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);overflow:hidden;}
+
+/* ═══ SHELL ═══ */
+.shell{display:flex;height:100vh;overflow:hidden;flex-direction:column;}
+
+/* ═══ TOPBAR ═══ */
+.topbar{
+  height:58px;background:var(--navy);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.5rem;flex-shrink:0;position:relative;z-index:50;
+}
+.tb-left{display:flex;align-items:center;gap:12px;}
+.tb-logo{width:34px;height:34px;background:var(--gold);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.tb-logo svg{width:20px;height:20px;}
+.tb-title{font-family:'Fraunces',serif;font-size:17px;color:var(--white);letter-spacing:-0.01em;}
+.tb-module{font-size:11px;background:rgba(244,185,66,0.2);color:var(--gold);padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.tb-pill{padding:6px 14px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;}
+.tb-pill.ghost{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);}
+.tb-pill.ghost:hover{background:rgba(255,255,255,0.18);}
+.tb-pill.gold{background:var(--gold);color:var(--navy);}
+.tb-pill.gold:hover{background:var(--gold-mid);}
+
+/* ═══ MAIN SPLIT ═══ */
+.body-split{display:flex;flex:1;overflow:hidden;}
+
+/* ═══ LEFT — ADMIN COMPOSE ═══ */
+.compose-panel{
+  width:460px;flex-shrink:0;
+  background:var(--white);
+  border-right:1px solid var(--stone);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.cp-header{
+  padding:1.4rem 1.5rem 1rem;
+  border-bottom:1px solid var(--stone);
+  flex-shrink:0;
+}
+.cp-eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-soft);margin-bottom:6px;}
+.cp-title{font-family:'Fraunces',serif;font-size:22px;color:var(--navy);font-weight:600;letter-spacing:-0.02em;}
+
+.cp-body{flex:1;overflow-y:auto;padding:1.2rem 1.5rem;}
+.cp-body::-webkit-scrollbar{width:3px;}
+.cp-body::-webkit-scrollbar-thumb{background:var(--stone);border-radius:2px;}
+
+/* Alert type selector */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.2rem;}
+.type-card{
+  border:1.5px solid var(--stone);border-radius:var(--r-md);
+  padding:10px;cursor:pointer;transition:all 0.18s;text-align:center;
+  background:var(--white);
+}
+.type-card:hover{border-color:var(--sky-mid);background:var(--sky);}
+.type-card.selected{border-color:var(--navy-mid);background:var(--sky);}
+.type-card.delay.selected{border-color:#D97706;background:#FFFBEB;}
+.type-card.cancel.selected{border-color:var(--coral);background:var(--coral-soft);}
+.type-card.driver.selected{border-color:var(--teal);background:var(--teal-soft);}
+.type-card.stop.selected{border-color:var(--navy-mid);background:var(--sky);}
+.type-card.holiday.selected{border-color:#7C3AED;background:#F5F3FF;}
+.type-card.custom.selected{border-color:var(--text-mid);background:var(--sand);}
+.type-icon{font-size:20px;margin-bottom:4px;}
+.type-label{font-size:11px;font-weight:600;color:var(--text-mid);}
+.type-card.selected .type-label{color:var(--navy);}
+
+/* Field styles */
+.field{margin-bottom:1rem;}
+.field label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:6px;}
+.field select,.field input,.field textarea{
+  width:100%;padding:10px 13px;
+  background:var(--cream);border:1.5px solid var(--stone);
+  border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;
+  font-size:14px;color:var(--text);outline:none;
+  transition:border-color 0.2s,background 0.2s;
+}
+.field select:focus,.field input:focus,.field textarea:focus{
+  border-color:var(--navy-mid);background:var(--white);
+}
+.field textarea{resize:vertical;min-height:88px;line-height:1.6;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* Channel toggles */
+.channel-row{display:flex;gap:8px;margin-bottom:1.2rem;}
+.ch-toggle{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 14px;border-radius:var(--r-sm);
+  border:1.5px solid var(--stone);cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--text-mid);
+  transition:all 0.18s;background:var(--white);user-select:none;
+}
+.ch-toggle.on{border-color:var(--navy-mid);background:var(--sky);color:var(--navy);}
+.ch-toggle .ch-dot{width:8px;height:8px;border-radius:50%;background:var(--stone);transition:background 0.18s;}
+.ch-toggle.on .ch-dot{background:var(--navy-mid);}
+
+/* Recipient preview */
+.recipient-bar{
+  background:var(--sand);border:1px solid var(--stone);
+  border-radius:var(--r-sm);padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;
+}
+.rb-label{font-size:12px;color:var(--text-soft);}
+.rb-count{font-family:'Fraunces',serif;font-size:18px;color:var(--navy);font-weight:600;}
+.rb-detail{font-size:11px;color:var(--text-soft);margin-top:1px;}
+
+/* SMS preview */
+.sms-preview{
+  background:var(--navy);border-radius:var(--r-lg);
+  padding:1rem 1.2rem;margin-bottom:1.2rem;
+}
+.sp-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.sp-bubble{
+  background:rgba(255,255,255,0.1);border-radius:12px 12px 12px 0;
+  padding:10px 14px;font-size:13px;color:rgba(255,255,255,0.9);
+  line-height:1.55;max-width:280px;
+}
+.sp-sender{font-size:11px;color:var(--gold);font-weight:600;margin-bottom:4px;}
+.sp-char{font-size:11px;color:rgba(255,255,255,0.35);text-align:right;margin-top:6px;}
+
+/* Send button */
+.send-btn{
+  width:100%;padding:14px;background:var(--navy);color:var(--white);
+  border:none;border-radius:var(--r-md);font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:600;cursor:pointer;
+  transition:background 0.2s,transform 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  letter-spacing:0.01em;
+}
+.send-btn:hover{background:var(--navy-light);transform:translateY(-1px);}
+.send-btn:active{transform:translateY(0);}
+.send-btn.sending{background:var(--teal);pointer-events:none;}
+
+/* Stats strip */
+.stats-strip{
+  display:flex;border-top:1px solid var(--stone);
+  flex-shrink:0;background:var(--sand);
+}
+.ss-item{flex:1;padding:0.8rem 1rem;text-align:center;border-right:1px solid var(--stone);}
+.ss-item:last-child{border-right:none;}
+.ss-val{font-family:'Fraunces',serif;font-size:20px;color:var(--navy);font-weight:600;}
+.ss-val.teal{color:var(--teal);}
+.ss-val.gold{color:var(--gold-mid);}
+.ss-val.coral{color:var(--coral);}
+.ss-lbl{font-size:10px;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.05em;margin-top:1px;font-weight:500;}
+
+/* ═══ RIGHT — LIVE FEED ═══ */
+.feed-panel{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--cream);
+}
+
+.feed-topbar{
+  padding:1rem 1.5rem;border-bottom:1px solid var(--stone);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;background:var(--white);
+}
+.ft-title{font-family:'Fraunces',serif;font-size:18px;color:var(--navy);font-weight:600;}
+.ft-tabs{display:flex;gap:4px;}
+.ft-tab{
+  padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1.5px solid transparent;
+  transition:all 0.18s;color:var(--text-soft);
+}
+.ft-tab.active{background:var(--navy);color:var(--white);}
+.ft-tab:not(.active):hover{background:var(--sand);color:var(--text-mid);}
+
+/* Two-col inside feed */
+.feed-cols{display:flex;flex:1;overflow:hidden;}
+
+/* Notification inbox (student view) */
+.inbox-col{
+  width:340px;flex-shrink:0;border-right:1px solid var(--stone);
+  display:flex;flex-direction:column;overflow:hidden;background:var(--white);
+}
+.inbox-header{
+  padding:0.8rem 1.1rem;border-bottom:1px solid var(--stone);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ih-title{font-size:13px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:0.06em;}
+.unread-pill{background:var(--coral);color:white;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;}
+
+.inbox-list{flex:1;overflow-y:auto;}
+.inbox-list::-webkit-scrollbar{width:3px;}
+.inbox-list::-webkit-scrollbar-thumb{background:var(--stone);}
+
+.notif-item{
+  padding:12px 1.1rem;border-bottom:1px solid #F1EFE8;
+  cursor:pointer;transition:background 0.15s;display:flex;gap:10px;
+  position:relative;
+}
+.notif-item:hover{background:var(--cream);}
+.notif-item.unread{background:#FAFEFF;}
+.notif-item.unread::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 2px 2px 0;}
+.notif-item.unread.delay::before{background:#D97706;}
+.notif-item.unread.cancel::before{background:var(--coral);}
+.notif-item.unread.driver::before{background:var(--teal);}
+.notif-item.unread.stop::before{background:var(--navy-mid);}
+.notif-item.unread.holiday::before{background:#7C3AED;}
+.notif-item.selected{background:var(--sky);}
+
+.ni-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  margin-top:1px;
+}
+.ni-icon.delay{background:#FEF3C7;}
+.ni-icon.cancel{background:var(--coral-soft);}
+.ni-icon.driver{background:var(--teal-soft);}
+.ni-icon.stop{background:var(--sky);}
+.ni-icon.holiday{background:#F5F3FF;}
+.ni-icon.custom{background:var(--sand);}
+.ni-body{flex:1;min-width:0;}
+.ni-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px;}
+.ni-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.2;}
+.ni-time{font-size:10px;color:var(--text-ghost);white-space:nowrap;margin-top:2px;flex-shrink:0;}
+.ni-sub{font-size:12px;color:var(--text-soft);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.ni-channels{display:flex;gap:4px;margin-top:5px;}
+.ni-ch{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;}
+.ni-ch.sms{background:#FEF3C7;color:#92400E;}
+.ni-ch.push{background:var(--sky);color:var(--navy-mid);}
+.ni-ch.email{background:#F0FDF4;color:#166534;}
+
+/* Delivery analytics col */
+.analytics-col{
+  flex:1;overflow-y:auto;padding:1.2rem 1.5rem;
+}
+.analytics-col::-webkit-scrollbar{width:3px;}
+.analytics-col::-webkit-scrollbar-thumb{background:var(--stone);}
+
+.detail-card{
+  background:var(--white);border:1px solid var(--stone);
+  border-radius:var(--r-lg);padding:1.3rem 1.4rem;
+  margin-bottom:1rem;
+}
+.dc-title{font-family:'Fraunces',serif;font-size:18px;color:var(--navy);font-weight:600;margin-bottom:4px;line-height:1.3;}
+.dc-meta{font-size:12px;color:var(--text-soft);margin-bottom:1rem;display:flex;gap:12px;flex-wrap:wrap;}
+.dc-meta span{display:flex;align-items:center;gap:4px;}
+
+/* Delivery bars */
+.delivery-section{margin-bottom:1rem;}
+.ds-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-soft);margin-bottom:10px;}
+.delivery-bar-wrap{margin-bottom:10px;}
+.db-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.db-label{color:var(--text-mid);font-weight:500;}
+.db-val{color:var(--text);font-weight:600;}
+.db-track{height:8px;background:var(--stone);border-radius:4px;overflow:hidden;}
+.db-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(0.34,1.2,0.64,1);}
+.db-fill.delivered{background:var(--teal);}
+.db-fill.pending{background:var(--gold);}
+.db-fill.failed{background:var(--coral);}
+
+/* Mini stat row */
+.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;}
+.ms-card{background:var(--sand);border-radius:var(--r-md);padding:10px 12px;text-align:center;}
+.ms-val{font-family:'Fraunces',serif;font-size:20px;font-weight:600;}
+.ms-val.teal{color:var(--teal);}
+.ms-val.gold{color:var(--gold-mid);}
+.ms-val.coral{color:var(--coral);}
+.ms-lbl{font-size:10px;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;}
+
+/* Timeline */
+.timeline{list-style:none;}
+.tl-item{display:flex;gap:12px;padding-bottom:16px;position:relative;}
+.tl-item:not(:last-child)::after{content:'';position:absolute;left:11px;top:24px;bottom:0;width:1.5px;background:var(--stone);}
+.tl-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:1;}
+.tl-dot.ok{background:var(--teal-soft);color:var(--teal);}
+.tl-dot.warn{background:#FEF3C7;color:#D97706;}
+.tl-dot.info{background:var(--sky);color:var(--navy-mid);}
+.tl-dot.err{background:var(--coral-soft);color:var(--coral);}
+.tl-content{flex:1;padding-top:2px;}
+.tl-label{font-size:13px;font-weight:600;color:var(--text);}
+.tl-sub{font-size:12px;color:var(--text-soft);margin-top:1px;}
+.tl-time{font-size:11px;color:var(--text-ghost);}
+
+/* empty state */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:3rem 2rem;text-align:center;height:100%;
+}
+.empty-icon{font-size:40px;margin-bottom:1rem;opacity:0.4;}
+.empty-text{font-size:14px;color:var(--text-soft);}
+
+/* ═══ PUSH TOAST ═══ */
+.push-toasts{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.push-toast{
+  background:var(--white);border:1px solid var(--stone);
+  border-radius:var(--r-lg);box-shadow:var(--shadow-float);
+  padding:14px 16px;width:300px;pointer-events:all;
+  display:flex;gap:12px;align-items:flex-start;
+  transform:translateX(320px);opacity:0;
+  transition:transform 0.4s cubic-bezier(0.34,1.2,0.64,1),opacity 0.3s;
+}
+.push-toast.show{transform:translateX(0);opacity:1;}
+.pt-icon{width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.pt-body{flex:1;}
+.pt-app{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-soft);margin-bottom:2px;}
+.pt-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.pt-msg{font-size:12px;color:var(--text-mid);line-height:1.4;}
+.pt-time{font-size:10px;color:var(--text-ghost);margin-top:4px;}
+.pt-close{background:none;border:none;cursor:pointer;color:var(--text-ghost);font-size:16px;padding:0;line-height:1;flex-shrink:0;margin-top:-2px;}
+
+/* ═══ SMS MODAL SIMULATION ═══ */
+.sms-sim-overlay{
+  position:fixed;inset:0;background:rgba(0,45,98,0.5);
+  z-index:8000;display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.25s;
+}
+.sms-sim-overlay.show{opacity:1;pointer-events:all;}
+.sms-phone{
+  width:280px;background:#1C1C1E;border-radius:40px;
+  padding:20px 12px 28px;box-shadow:0 32px 80px rgba(0,0,0,0.6);
+  transform:scale(0.88) translateY(20px);
+  transition:transform 0.4s cubic-bezier(0.34,1.2,0.64,1);
+}
+.sms-sim-overlay.show .sms-phone{transform:scale(1) translateY(0);}
+.sp-notch{width:80px;height:6px;background:#3A3A3C;border-radius:3px;margin:0 auto 18px;}
+.sp-screen{background:#000;border-radius:28px;padding:14px;min-height:380px;}
+.sp-status{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:14px;padding:0 4px;}
+.sp-msg-header{text-align:center;margin-bottom:14px;}
+.sp-from{font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:2px;}
+.sp-name{font-size:16px;color:var(--white);font-weight:600;}
+.sp-messages{display:flex;flex-direction:column;gap:8px;}
+.sp-bubble-wrap{display:flex;justify-content:flex-start;}
+.sp-bubble{
+  background:#1C1C1E;border-radius:14px 14px 14px 2px;
+  padding:10px 13px;max-width:210px;
+  font-size:13px;color:var(--white);line-height:1.5;
+}
+.sp-bubble .sp-btime{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;text-align:right;}
+.sp-close-btn{
+  margin-top:14px;width:100%;padding:11px;background:#1C1C1E;
+  border:none;border-radius:20px;color:rgba(255,255,255,0.6);
+  font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;
+}
+
+/* Sending progress */
+.send-progress{
+  background:var(--white);border:1px solid var(--stone);
+  border-radius:var(--r-md);padding:1rem 1.2rem;margin-top:1rem;
+  display:none;
+}
+.send-progress.show{display:block;}
+.sp-prog-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;}
+.sp-prog-track{height:6px;background:var(--stone);border-radius:3px;overflow:hidden;margin-bottom:6px;}
+.sp-prog-fill{height:100%;background:var(--teal);border-radius:3px;width:0%;transition:width 0.4s ease;}
+.sp-prog-label{font-size:11px;color:var(--text-soft);}
+
+/* Scroll styling */
+.inbox-list::-webkit-scrollbar{width:3px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <nav class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L5 5H19L21 11V17H19V19H17V17H7V19H5V17H3V11Z" fill="#002D62"/><rect x="6" y="12" width="3" height="3" rx="1" fill="#002D62" opacity=".5"/><rect x="15" y="12" width="3" height="3" rx="1" fill="#002D62" opacity=".5"/><path d="M5 11H19" stroke="#002D62" stroke-width="1.2"/></svg>
+      </div>
+      <span class="tb-title">SchoolRide Barbados</span>
+      <span class="tb-module">Module 4 — Notifications</span>
+    </div>
+    <div class="tb-right">
+      <button class="tb-pill ghost" onclick="showSMSSim()">📱 Preview SMS</button>
+      <button class="tb-pill gold" onclick="fireDemoAlert()">⚡ Demo Alert</button>
+    </div>
+  </nav>
+
+  <div class="body-split">
+
+    <!-- ═══════════ LEFT: COMPOSE ═══════════ -->
+    <aside class="compose-panel">
+      <div class="cp-header">
+        <div class="cp-eyebrow">Transport Board Console</div>
+        <div class="cp-title">Compose Alert</div>
+      </div>
+
+      <div class="cp-body" id="compose-body">
+
+        <!-- Alert type -->
+        <div class="field">
+          <label>Alert Type</label>
+          <div class="type-grid">
+            <div class="type-card delay selected" onclick="selectType('delay',this)">
+              <div class="type-icon">⚠️</div>
+              <div class="type-label">Delay</div>
+            </div>
+            <div class="type-card cancel" onclick="selectType('cancel',this)">
+              <div class="type-icon">🚫</div>
+              <div class="type-label">Cancellation</div>
+            </div>
+            <div class="type-card driver" onclick="selectType('driver',this)">
+              <div class="type-icon">🧑‍✈️</div>
+              <div class="type-label">Driver Change</div>
+            </div>
+            <div class="type-card stop" onclick="selectType('stop',this)">
+              <div class="type-icon">📍</div>
+              <div class="type-label">Stop Update</div>
+            </div>
+            <div class="type-card holiday" onclick="selectType('holiday',this)">
+              <div class="type-icon">📅</div>
+              <div class="type-label">Holiday</div>
+            </div>
+            <div class="type-card custom" onclick="selectType('custom',this)">
+              <div class="type-icon">📢</div>
+              <div class="type-label">General</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route & urgency -->
+        <div class="field-row">
+          <div class="field">
+            <label>Affected Route</label>
+            <select id="f-route" onchange="updateRecipients()">
+              <option value="all">All Routes (1,284 students)</option>
+              <option value="r12" selected>Route 12 — North (94)</option>
+              <option value="r5">Route 5 — South (67)</option>
+              <option value="r7">Route 7 — East (52)</option>
+              <option value="r9">Route 9 — Central (81)</option>
+              <option value="r3">Route 3 — West (38)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Urgency</label>
+            <select id="f-urgency">
+              <option value="high">🔴 High — send now</option>
+              <option value="med" selected>🟡 Medium</option>
+              <option value="low">🟢 Low — scheduled</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Channels -->
+        <div class="field">
+          <label>Delivery Channels</label>
+          <div class="channel-row">
+            <div class="ch-toggle on" id="ch-sms" onclick="toggleChannel(this,'ch-sms')">
+              <div class="ch-dot"></div>SMS
+            </div>
+            <div class="ch-toggle on" id="ch-push" onclick="toggleChannel(this,'ch-push')">
+              <div class="ch-dot"></div>Push
+            </div>
+            <div class="ch-toggle" id="ch-email" onclick="toggleChannel(this,'ch-email')">
+              <div class="ch-dot"></div>Email
+            </div>
+            <div class="ch-toggle" id="ch-parent" onclick="toggleChannel(this,'ch-parent')">
+              <div class="ch-dot"></div>Parents
+            </div>
+          </div>
+        </div>
+
+        <!-- Message -->
+        <div class="field">
+          <label>Message</label>
+          <textarea id="f-message" placeholder="Type your alert message here…" oninput="updatePreview()" maxlength="320">Route 12 will be approximately 3 minutes late this morning due to roadworks on ABC Highway near Warrens. Please be at your stop on time.</textarea>
+        </div>
+
+        <!-- Recipient bar -->
+        <div class="recipient-bar">
+          <div>
+            <div class="rb-label">Recipients</div>
+            <div class="rb-detail" id="rb-detail">Route 12 — North · SMS + Push</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="rb-count" id="rb-count">94</div>
+            <div class="rb-label">students</div>
+          </div>
+        </div>
+
+        <!-- SMS preview -->
+        <div class="sms-preview">
+          <div class="sp-label">SMS Preview</div>
+          <div class="sp-bubble">
+            <div class="sp-sender">SchoolRide BB</div>
+            <div id="sms-preview-text">Route 12 will be approximately 3 minutes late this morning due to roadworks on ABC Highway near Warrens. Please be at your stop on time.</div>
+          </div>
+          <div class="sp-char"><span id="char-count">166</span> / 320 chars</div>
+        </div>
+
+        <!-- Send progress -->
+        <div class="send-progress" id="send-progress">
+          <div class="sp-prog-title">Sending alert…</div>
+          <div class="sp-prog-track"><div class="sp-prog-fill" id="prog-fill"></div></div>
+          <div class="sp-prog-label" id="prog-label">Queuing messages…</div>
+        </div>
+
+        <!-- Send button -->
+        <button class="send-btn" id="send-btn" onclick="sendAlert()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 2L2 7l4 3 6-5-5 6 3 4z" fill="white"/></svg>
+          Send Alert
+        </button>
+
+      </div>
+
+      <!-- Stats strip -->
+      <div class="stats-strip">
+        <div class="ss-item"><div class="ss-val teal" id="ss-sent">47</div><div class="ss-lbl">Sent today</div></div>
+        <div class="ss-item"><div class="ss-val gold" id="ss-reach">3,841</div><div class="ss-lbl">Students reached</div></div>
+        <div class="ss-item"><div class="ss-val" id="ss-rate">96%</div><div class="ss-lbl">Delivery rate</div></div>
+        <div class="ss-item"><div class="ss-val coral" id="ss-failed">4</div><div class="ss-lbl">Failed</div></div>
+      </div>
+    </aside>
+
+    <!-- ═══════════ RIGHT: LIVE FEED ═══════════ -->
+    <div class="feed-panel">
+      <div class="feed-topbar">
+        <div class="ft-title">Live Notification Feed</div>
+        <div class="ft-tabs">
+          <div class="ft-tab active" onclick="switchFeedTab('inbox',this)">Student Inbox</div>
+          <div class="ft-tab" onclick="switchFeedTab('analytics',this)">Analytics</div>
+        </div>
+      </div>
+
+      <!-- INBOX + DETAIL -->
+      <div class="feed-cols" id="feed-inbox">
+        <div class="inbox-col">
+          <div class="inbox-header">
+            <span class="ih-title">Notifications</span>
+            <span class="unread-pill" id="unread-count">3 unread</span>
+          </div>
+          <div class="inbox-list" id="inbox-list"></div>
+        </div>
+
+        <!-- Detail panel -->
+        <div class="analytics-col" id="detail-panel">
+          <div class="empty-state" id="detail-empty">
+            <div class="empty-icon">🔔</div>
+            <div class="empty-text">Select a notification to view delivery details and timeline.</div>
+          </div>
+          <div id="detail-content" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS TAB -->
+      <div class="feed-cols" id="feed-analytics" style="display:none;">
+        <div class="analytics-col" style="width:100%;max-width:100%;">
+
+          <div class="detail-card">
+            <div class="dc-title">Delivery Overview — Today</div>
+            <div class="dc-meta">
+              <span>📅 Monday 14 Apr 2025</span>
+              <span>📨 47 alerts sent</span>
+              <span>👥 3,841 recipients</span>
+            </div>
+            <div class="delivery-section">
+              <div class="ds-title">By Channel</div>
+              <div class="delivery-bar-wrap">
+                <div class="db-head"><span class="db-label">SMS</span><span class="db-val">2,104 / 2,180 delivered</span></div>
+                <div class="db-track"><div class="db-fill delivered" style="width:96.5%;"></div></div>
+              </div>
+              <div class="delivery-bar-wrap">
+                <div class="db-head"><span class="db-label">Push Notification</span><span class="db-val">1,598 / 1,661 delivered</span></div>
+                <div class="db-track"><div class="db-fill delivered" style="width:96.2%;"></div></div>
+              </div>
+              <div class="delivery-bar-wrap">
+                <div class="db-head"><span class="db-label">Email</span><span class="db-val">0 / 0 sent</span></div>
+                <div class="db-track"><div class="db-fill pending" style="width:0%;"></div></div>
+              </div>
+            </div>
+            <div class="delivery-section">
+              <div class="ds-title">By Route</div>
+              <div class="delivery-bar-wrap">
+                <div class="db-head"><span class="db-label">Route 12 — North</span><span class="db-val">94 students</span></div>
+                <div class="db-track"><div class="db-fill delivered" style="width:100%;"></div></div>
+              </div>
+              <div class="delivery-bar-wrap">
+                <div class="db-head"><span class="db-label">Route 5 — South</span><span class="db-val">67 students</span></div>
+                <div class="db-track"><div class="db-fill delivered" style="width:98%;"></div></div>
+              </div>
+              <div class="delivery-bar-wrap">
+                <div class="db-head"><span class="db-label">Route 9 — Central</span><span class="db-val">81 students</span></div>
+                <div class="db-track"><div class="db-fill pending" style="width:74%;"></div></div>
+              </div>
+              <div class="delivery-bar-wrap">
+                <div class="db-head"><span class="db-label">Route 7 — East</span><span class="db-val">52 students</span></div>
+                <div class="db-track"><div class="db-fill delivered" style="width:92%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <div class="dc-title">Failed Deliveries</div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:0.5rem;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--stone);">
+                  <th style="text-align:left;padding:6px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);font-weight:600;">Student</th>
+                  <th style="text-align:left;padding:6px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);font-weight:600;">Channel</th>
+                  <th style="text-align:left;padding:6px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);font-weight:600;">Reason</th>
+                  <th style="text-align:right;padding:6px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);font-weight:600;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid var(--stone);">
+                  <td style="padding:9px 0;color:var(--text);font-weight:500;">Janelle Blackman</td>
+                  <td style="padding:9px 0;color:var(--text-mid);">SMS</td>
+                  <td style="padding:9px 0;color:var(--coral);">Number invalid</td>
+                  <td style="padding:9px 0;text-align:right;"><button style="font-size:12px;color:var(--navy-mid);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">Update</button></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--stone);">
+                  <td style="padding:9px 0;color:var(--text);font-weight:500;">Omari Brathwaite</td>
+                  <td style="padding:9px 0;color:var(--text-mid);">Push</td>
+                  <td style="padding:9px 0;color:var(--coral);">App not installed</td>
+                  <td style="padding:9px 0;text-align:right;"><button style="font-size:12px;color:var(--navy-mid);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">Retry SMS</button></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--stone);">
+                  <td style="padding:9px 0;color:var(--text);font-weight:500;">Talia Forde</td>
+                  <td style="padding:9px 0;color:var(--text-mid);">SMS</td>
+                  <td style="padding:9px 0;color:var(--gold-mid);">Delivery pending</td>
+                  <td style="padding:9px 0;text-align:right;"><button style="font-size:12px;color:var(--navy-mid);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">Retry</button></td>
+                </tr>
+                <tr>
+                  <td style="padding:9px 0;color:var(--text);font-weight:500;">Ryan Inniss</td>
+                  <td style="padding:9px 0;color:var(--text-mid);">Push</td>
+                  <td style="padding:9px 0;color:var(--coral);">Device offline</td>
+                  <td style="padding:9px 0;text-align:right;"><button style="font-size:12px;color:var(--navy-mid);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">Retry</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Push toast container -->
+<div class="push-toasts" id="push-toasts"></div>
+
+<!-- SMS Phone simulation -->
+<div class="sms-sim-overlay" id="sms-overlay" onclick="hideSMSSim(event)">
+  <div class="sms-phone" onclick="event.stopPropagation()">
+    <div class="sp-notch"></div>
+    <div class="sp-screen">
+      <div class="sp-status"><span>9:12</span><span>●●●●</span></div>
+      <div class="sp-msg-header">
+        <div class="sp-from">Message from</div>
+        <div class="sp-name">SchoolRide BB</div>
+      </div>
+      <div class="sp-messages">
+        <div class="sp-bubble-wrap">
+          <div class="sp-bubble">
+            <div id="phone-msg-text">Route 12 will be approximately 3 minutes late this morning due to roadworks on ABC Highway near Warrens. Please be at your stop on time.</div>
+            <div class="sp-btime">Delivered · Now</div>
+          </div>
+        </div>
+      </div>
+      <button class="sp-close-btn" onclick="hideSMSSim()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ DATA ═══
+const routeData = {
+  all:  { count: 1284, label: 'All Routes' },
+  r12:  { count: 94,   label: 'Route 12 — North' },
+  r5:   { count: 67,   label: 'Route 5 — South' },
+  r7:   { count: 52,   label: 'Route 7 — East' },
+  r9:   { count: 81,   label: 'Route 9 — Central' },
+  r3:   { count: 38,   label: 'Route 3 — West' },
+};
+
+const typeIcons = { delay:'⚠️', cancel:'🚫', driver:'🧑‍✈️', stop:'📍', holiday:'📅', custom:'📢' };
+const typeLabels = { delay:'Delay Warning', cancel:'Cancellation', driver:'Driver Change', stop:'Stop Update', holiday:'Holiday Notice', custom:'General Notice' };
+
+let selectedType = 'delay';
+let notifications = [
+  { id:1, type:'delay', title:'Route 12 — 3 min delay', msg:'Roadworks on ABC Hwy near Warrens causing approx. 3 minute delay this morning. Please be at your stop on time.', time:'5:42 AM', channels:['sms','push'], unread:true, sent:94, delivered:94, route:'Route 12' },
+  { id:2, type:'driver', title:'Route 7 — Driver change', msg:'Your regular driver is unavailable. Replacement driver TB-6012 has been assigned. Bus departs 8 minutes late today.', time:'6:01 AM', channels:['sms','push'], unread:true, sent:52, delivered:51, route:'Route 7' },
+  { id:3, type:'stop', title:'Clapham stop moved', msg:'Your stop on Route 12 has been relocated 50m south to the covered shelter near Clapham Gas Station, effective immediately.', time:'Apr 10', channels:['push'], unread:true, sent:94, delivered:92, route:'Route 12' },
+  { id:4, type:'holiday', title:'No service — Apr 28', msg:'There will be no bus service on Monday April 28th (National Heroes Day). Schools are closed. Normal service resumes April 29th.', time:'Apr 8', channels:['sms','push','email'], unread:false, sent:1284, delivered:1241, route:'All Routes' },
+  { id:5, type:'cancel', title:'Route 3 — Service cancelled', msg:'Route 3 bus R-15 has a mechanical fault and cannot operate today. Affected students should arrange alternative transport.', time:'Apr 8', channels:['sms','push'], unread:false, sent:38, delivered:38, route:'Route 3' },
+];
+
+let selectedNotif = null;
+let activeChannels = new Set(['ch-sms','ch-push']);
+
+// ═══ TYPE SELECTOR ═══
+function selectType(type, el) {
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedType = type;
+}
+
+// ═══ CHANNEL TOGGLES ═══
+function toggleChannel(el, id) {
+  el.classList.toggle('on');
+  if (el.classList.contains('on')) activeChannels.add(id);
+  else activeChannels.delete(id);
+  updateRecipients();
+}
+
+// ═══ RECIPIENT UPDATE ═══
+function updateRecipients() {
+  const route = document.getElementById('f-route').value;
+  const rd = routeData[route];
+  document.getElementById('rb-count').textContent = rd.count.toLocaleString();
+  const chLabels = [];
+  if (activeChannels.has('ch-sms'))    chLabels.push('SMS');
+  if (activeChannels.has('ch-push'))   chLabels.push('Push');
+  if (activeChannels.has('ch-email'))  chLabels.push('Email');
+  if (activeChannels.has('ch-parent')) chLabels.push('Parents');
+  document.getElementById('rb-detail').textContent = rd.label + (chLabels.length ? ' · ' + chLabels.join(' + ') : '');
+}
+
+// ═══ PREVIEW UPDATE ═══
+function updatePreview() {
+  const msg = document.getElementById('f-message').value;
+  document.getElementById('sms-preview-text').textContent = msg;
+  document.getElementById('phone-msg-text').textContent = msg;
+  document.getElementById('char-count').textContent = msg.length;
+}
+
+// ═══ SEND ALERT ═══
+function sendAlert() {
+  const msg = document.getElementById('f-message').value.trim();
+  if (!msg) return;
+  const routeSel = document.getElementById('f-route').value;
+  const rd = routeData[routeSel];
+
+  // Show progress
+  const prog = document.getElementById('send-progress');
+  const fill = document.getElementById('prog-fill');
+  const lbl  = document.getElementById('prog-label');
+  const btn  = document.getElementById('send-btn');
+  prog.classList.add('show');
+  btn.classList.add('sending');
+  btn.textContent = 'Sending…';
+
+  const steps = [
+    [10, 'Authenticating with SMS gateway…'],
+    [35, 'Queuing ' + rd.count + ' messages…'],
+    [60, 'Sending via Digicel Barbados…'],
+    [80, 'Dispatching push notifications…'],
+    [95, 'Finalising delivery…'],
+    [100,'Done!'],
+  ];
+  let i = 0;
+  const tick = setInterval(() => {
+    if (i >= steps.length) {
+      clearInterval(tick);
+      setTimeout(() => {
+        prog.classList.remove('show');
+        btn.classList.remove('sending');
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 2L2 7l4 3 6-5-5 6 3 4z" fill="white"/></svg> Send Alert';
+        fill.style.width = '0%';
+
+        // Add to inbox
+        const newN = {
+          id: Date.now(), type: selectedType,
+          title: typeLabels[selectedType] + ' — ' + rd.label,
+          msg, time:'Just now',
+          channels: [...activeChannels].map(c=>c.replace('ch-','')),
+          unread:true, sent: rd.count,
+          delivered: Math.round(rd.count * 0.97),
+          route: rd.label,
+        };
+        notifications.unshift(newN);
+        renderInbox();
+
+        // Fire push toast
+        firePushToast(newN);
+
+        // Update stats
+        let sent = parseInt(document.getElementById('ss-sent').textContent) + 1;
+        document.getElementById('ss-sent').textContent = sent;
+        let reach = parseInt(document.getElementById('ss-reach').textContent.replace(',','')) + rd.count;
+        document.getElementById('ss-reach').textContent = reach.toLocaleString();
+
+      }, 400);
+      return;
+    }
+    fill.style.width = steps[i][0] + '%';
+    lbl.textContent = steps[i][1];
+    i++;
+  }, 420);
+}
+
+// ═══ PUSH TOAST ═══
+function firePushToast(n) {
+  const container = document.getElementById('push-toasts');
+  const toast = document.createElement('div');
+  toast.className = 'push-toast';
+  toast.innerHTML = `
+    <div class="pt-icon ${n.type}">${typeIcons[n.type]}</div>
+    <div class="pt-body">
+      <div class="pt-app">SchoolRide Barbados</div>
+      <div class="pt-title">${n.title}</div>
+      <div class="pt-msg">${n.msg.substring(0,80)}${n.msg.length>80?'…':''}</div>
+      <div class="pt-time">Just now</div>
+    </div>
+    <button class="pt-close" onclick="this.closest('.push-toast').remove()">×</button>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => { requestAnimationFrame(() => { toast.classList.add('show'); }); });
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 5000);
+}
+
+function fireDemoAlert() {
+  const demos = [
+    { type:'delay', title:'Route 9 — Minor delay', msg:'Route 9 is running 5 minutes late due to heavy traffic near Eagle Hall roundabout.' },
+    { type:'driver', title:'Route 5 — Driver update', msg:'Substitute driver Ms. Y. Holder will operate Route 5 today. Departure time unchanged.' },
+    { type:'stop', title:'Route 7 — Stop closure', msg:'Villa Nova stop is temporarily closed for road repairs. Board at Six Roads Terminal instead.' },
+  ];
+  const d = demos[Math.floor(Math.random() * demos.length)];
+  firePushToast({ ...d, channels:['sms','push'] });
+
+  const newN = { id: Date.now(), ...d, time:'Just now',
+    channels:['sms','push'], unread:true,
+    sent:81, delivered:79, route:'Demo Route' };
+  notifications.unshift(newN);
+  renderInbox();
+}
+
+// ═══ INBOX RENDER ═══
+function renderInbox() {
+  const list = document.getElementById('inbox-list');
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item ${n.type} ${n.unread?'unread':''} ${selectedNotif===n.id?'selected':''}"
+         onclick="selectNotif(${n.id})">
+      <div class="ni-icon ${n.type}">${typeIcons[n.type]}</div>
+      <div class="ni-body">
+        <div class="ni-head">
+          <div class="ni-title">${n.title}</div>
+          <div class="ni-time">${n.time}</div>
+        </div>
+        <div class="ni-sub">${n.msg}</div>
+        <div class="ni-channels">
+          ${n.channels.map(c=>`<span class="ni-ch ${c}">${c.toUpperCase()}</span>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+  const unread = notifications.filter(n=>n.unread).length;
+  document.getElementById('unread-count').textContent = unread + (unread===1?' unread':' unread');
+}
+
+// ═══ NOTIFICATION DETAIL ═══
+function selectNotif(id) {
+  selectedNotif = id;
+  notifications = notifications.map(n => n.id===id ? {...n, unread:false} : n);
+  renderInbox();
+
+  const n = notifications.find(n=>n.id===id);
+  if (!n) return;
+
+  document.getElementById('detail-empty').style.display = 'none';
+  const dc = document.getElementById('detail-content');
+  dc.style.display = 'block';
+
+  const delivRate = n.sent > 0 ? Math.round(n.delivered / n.sent * 100) : 0;
+  const failed = n.sent - n.delivered;
+  const chBadges = n.channels.map(c=>`<span class="ni-ch ${c}">${c.toUpperCase()}</span>`).join(' ');
+
+  dc.innerHTML = `
+    <div class="detail-card">
+      <div class="dc-title">${n.title}</div>
+      <div class="dc-meta">
+        <span>${typeIcons[n.type]} ${typeLabels[n.type]}</span>
+        <span>🕐 ${n.time}</span>
+        <span>📡 ${n.route}</span>
+      </div>
+      <div style="background:var(--sand);border-radius:var(--r-sm);padding:12px 14px;font-size:14px;color:var(--text-mid);line-height:1.6;margin-bottom:1rem;border-left:3px solid var(--navy-mid);">
+        "${n.msg}"
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;">${chBadges}</div>
+    </div>
+
+    <div class="mini-stats" style="margin-bottom:1rem;">
+      <div class="ms-card"><div class="ms-val teal">${n.sent.toLocaleString()}</div><div class="ms-lbl">Sent</div></div>
+      <div class="ms-card"><div class="ms-val teal">${n.delivered.toLocaleString()}</div><div class="ms-lbl">Delivered</div></div>
+      <div class="ms-card"><div class="ms-val ${failed>0?'coral':'teal'}">${failed}</div><div class="ms-lbl">Failed</div></div>
+    </div>
+
+    <div class="detail-card">
+      <div class="ds-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-soft);margin-bottom:12px;">Delivery Breakdown</div>
+      <div class="delivery-bar-wrap">
+        <div class="db-head"><span class="db-label">Delivered</span><span class="db-val">${delivRate}%</span></div>
+        <div class="db-track"><div class="db-fill delivered" style="width:${delivRate}%;"></div></div>
+      </div>
+      ${failed > 0 ? `<div class="delivery-bar-wrap">
+        <div class="db-head"><span class="db-label">Failed / Pending</span><span class="db-val">${failed} messages</span></div>
+        <div class="db-track"><div class="db-fill failed" style="width:${100-delivRate}%;"></div></div>
+      </div>` : ''}
+    </div>
+
+    <div class="detail-card">
+      <div class="ds-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-soft);margin-bottom:14px;">Delivery Timeline</div>
+      <ul class="timeline">
+        <li class="tl-item">
+          <div class="tl-dot ok">✓</div>
+          <div class="tl-content">
+            <div class="tl-label">Alert composed &amp; approved</div>
+            <div class="tl-sub">Admin R. Adams · Transport Board Console</div>
+            <div class="tl-time">${n.time}</div>
+          </div>
+        </li>
+        <li class="tl-item">
+          <div class="tl-dot ok">✓</div>
+          <div class="tl-content">
+            <div class="tl-label">SMS queued — Digicel Barbados gateway</div>
+            <div class="tl-sub">${n.sent} messages batched and queued</div>
+            <div class="tl-time">${n.time}</div>
+          </div>
+        </li>
+        <li class="tl-item">
+          <div class="tl-dot ok">✓</div>
+          <div class="tl-content">
+            <div class="tl-label">Push notifications dispatched — Firebase FCM</div>
+            <div class="tl-sub">${Math.round(n.sent * 0.7)} devices targeted</div>
+            <div class="tl-time">${n.time}</div>
+          </div>
+        </li>
+        <li class="tl-item">
+          <div class="tl-dot ${failed>0?'warn':'ok'}">${failed>0?'!':'✓'}</div>
+          <div class="tl-content">
+            <div class="tl-label">Delivery confirmed — ${n.delivered} of ${n.sent}</div>
+            <div class="tl-sub">${failed>0 ? failed + ' messages undelivered — see failed list' : 'All messages delivered successfully'}</div>
+            <div class="tl-time">${n.time}</div>
+          </div>
+        </li>
+        ${failed>0 ? `<li class="tl-item">
+          <div class="tl-dot info">↺</div>
+          <div class="tl-content">
+            <div class="tl-label">Retry scheduled for failed messages</div>
+            <div class="tl-sub">Automatic retry in 30 minutes via SMS fallback</div>
+            <div class="tl-time">Pending</div>
+          </div>
+        </li>` : ''}
+      </ul>
+    </div>
+  `;
+}
+
+// ═══ FEED TAB SWITCH ═══
+function switchFeedTab(tab, el) {
+  document.querySelectorAll('.ft-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('feed-inbox').style.display = tab==='inbox' ? 'flex' : 'none';
+  document.getElementById('feed-analytics').style.display = tab==='analytics' ? 'flex' : 'none';
+}
+
+// ═══ SMS SIM ═══
+function showSMSSim() {
+  updatePreview();
+  document.getElementById('sms-overlay').classList.add('show');
+}
+function hideSMSSim(e) {
+  if (!e || e.target === document.getElementById('sms-overlay')) {
+    document.getElementById('sms-overlay').classList.remove('show');
+  }
+}
+
+// ═══ INIT ═══
+renderInbox();
+updateRecipients();
+updatePreview();
+</script>
+</body>
+</html>

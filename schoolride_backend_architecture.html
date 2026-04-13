@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SchoolRide Barbados — Backend Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#002D62;--navy-mid:#003F87;--navy-light:#1A5FA8;
+  --gold:#F4B942;--gold-soft:#FDF6E3;
+  --teal:#0B7C6E;--teal-soft:#E6F9F3;
+  --coral:#E8523A;--coral-soft:#FEF0EE;
+  --purple:#5A3FBF;--purple-soft:#F0EEFF;
+  --green:#1A7F3C;--green-soft:#EDFAF2;
+  --cream:#FEFCF7;--sand:#F7F1E3;--stone:#EDE8DC;
+  --text:#1C1A2E;--text-mid:#4A5568;--text-soft:#718096;
+  --border:#E2DDD0;--border-mid:#CCC7BA;
+  --white:#ffffff;
+  --code-bg:#1E2433;--code-text:#E2E8F0;
+  --r-sm:6px;--r-md:10px;--r-lg:16px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);line-height:1.7;font-size:15px;}
+
+/* ── LAYOUT ── */
+.shell{display:flex;min-height:100vh;}
+
+/* ── SIDEBAR NAV ── */
+.sidenav{
+  width:256px;flex-shrink:0;
+  background:var(--navy);
+  position:fixed;top:0;left:0;bottom:0;
+  overflow-y:auto;z-index:100;
+  display:flex;flex-direction:column;
+}
+.sidenav::-webkit-scrollbar{width:3px;}
+.sidenav::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);}
+.sn-logo{padding:1.4rem 1.2rem 1rem;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sn-logo-row{display:flex;align-items:center;gap:9px;margin-bottom:6px;}
+.sn-logo-icon{width:30px;height:30px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.sn-logo-icon svg{width:17px;height:17px;}
+.sn-logo-name{font-family:'DM Serif Display',serif;font-size:15px;color:var(--white);}
+.sn-logo-sub{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:0.05em;text-transform:uppercase;font-weight:500;}
+.sn-doc-title{font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px;line-height:1.4;}
+
+.sn-section{padding:1rem 1rem 0.3rem;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.35);}
+.sn-link{display:block;padding:7px 1rem 7px 1.1rem;font-size:12.5px;color:rgba(255,255,255,0.6);text-decoration:none;border-left:2px solid transparent;transition:all 0.15s;line-height:1.3;}
+.sn-link:hover{color:var(--white);background:rgba(255,255,255,0.07);border-left-color:rgba(255,255,255,0.2);}
+.sn-link.active{color:var(--gold);border-left-color:var(--gold);background:rgba(244,185,66,0.08);}
+.sn-link.sub{padding-left:1.9rem;font-size:12px;}
+
+.sn-footer{margin-top:auto;padding:1rem;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:rgba(255,255,255,0.3);}
+
+/* ── MAIN CONTENT ── */
+.main{margin-left:256px;flex:1;max-width:900px;padding:2.5rem 3rem 5rem;}
+
+/* ── HERO ── */
+.doc-hero{margin-bottom:3rem;}
+.doc-eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--teal);margin-bottom:10px;}
+.doc-title{font-family:'DM Serif Display',serif;font-size:40px;color:var(--navy);line-height:1.15;letter-spacing:-0.02em;margin-bottom:12px;}
+.doc-sub{font-size:16px;color:var(--text-soft);max-width:600px;line-height:1.6;margin-bottom:1.5rem;}
+.doc-meta{display:flex;gap:16px;flex-wrap:wrap;}
+.meta-chip{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-soft);background:var(--sand);padding:5px 12px;border-radius:20px;border:1px solid var(--border);}
+
+/* ── SECTION HEADINGS ── */
+.doc-section{margin-bottom:3rem;}
+h2.sec-title{
+  font-family:'DM Serif Display',serif;font-size:26px;color:var(--navy);
+  margin-bottom:0.5rem;padding-top:0.5rem;letter-spacing:-0.01em;
+  display:flex;align-items:center;gap:12px;
+}
+h2.sec-title .sec-num{font-size:13px;font-weight:600;background:var(--navy);color:var(--white);width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'DM Sans',sans-serif;}
+.sec-intro{font-size:15px;color:var(--text-mid);margin-bottom:1.5rem;max-width:680px;line-height:1.7;}
+h3.sub-title{font-size:16px;font-weight:600;color:var(--text);margin:1.8rem 0 0.8rem;display:flex;align-items:center;gap:8px;}
+h3.sub-title::before{content:'';width:3px;height:18px;background:var(--gold);border-radius:2px;flex-shrink:0;}
+h4.mini-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);margin:1.2rem 0 0.5rem;}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:2.5rem 0;}
+
+/* ── CODE BLOCKS ── */
+.code-block{
+  background:var(--code-bg);border-radius:var(--r-lg);
+  overflow:hidden;margin:1rem 0 1.5rem;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.code-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:rgba(255,255,255,0.04);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.code-lang{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);}
+.code-label{font-size:11px;color:rgba(255,255,255,0.25);}
+.code-dots{display:flex;gap:5px;}
+.code-dot{width:10px;height:10px;border-radius:50%;}
+pre{padding:1.2rem 1.4rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:var(--code-text);}
+pre::-webkit-scrollbar{height:4px;}
+pre::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
+
+/* Syntax colours */
+.k{color:#C792EA;}   /* keyword */
+.s{color:#C3E88D;}   /* string */
+.c{color:#546E7A;font-style:italic;} /* comment */
+.n{color:#82AAFF;}   /* name/func */
+.t{color:#FFCB6B;}   /* type */
+.v{color:#F78C6C;}   /* value/number */
+.p{color:#89DDFF;}   /* punctuation */
+.cm{color:#80CBC4;}  /* SQL keyword */
+
+/* ── DB SCHEMA TABLES ── */
+.schema-table{width:100%;border-collapse:collapse;margin:1rem 0 1.5rem;font-size:13px;}
+.schema-table thead th{
+  padding:9px 14px;text-align:left;
+  background:var(--navy);color:var(--white);
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;
+}
+.schema-table thead th:first-child{border-radius:var(--r-sm) 0 0 0;}
+.schema-table thead th:last-child{border-radius:0 var(--r-sm) 0 0;}
+.schema-table tbody tr{border-bottom:1px solid var(--border);}
+.schema-table tbody tr:last-child{border-bottom:none;}
+.schema-table tbody tr:hover{background:var(--sand);}
+.schema-table tbody td{padding:9px 14px;color:var(--text-mid);vertical-align:top;}
+.schema-table tbody td:first-child{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--navy-mid);font-weight:500;}
+.col-type{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--purple);background:var(--purple-soft);padding:2px 7px;border-radius:4px;white-space:nowrap;}
+.col-pk{font-size:10px;font-weight:700;background:var(--gold-soft);color:var(--gold);border:1px solid var(--gold);padding:1px 6px;border-radius:4px;margin-left:5px;}
+.col-fk{font-size:10px;font-weight:700;background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal);padding:1px 6px;border-radius:4px;margin-left:5px;}
+.col-nn{font-size:10px;color:var(--coral);font-weight:600;}
+.col-desc{font-size:13px;color:var(--text-soft);}
+
+/* ── API ENDPOINT CARDS ── */
+.endpoint-card{
+  border:1px solid var(--border);border-radius:var(--r-lg);
+  overflow:hidden;margin-bottom:1.2rem;
+}
+.ep-header{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;background:var(--sand);
+  border-bottom:1px solid var(--border);cursor:pointer;
+  transition:background 0.15s;
+}
+.ep-header:hover{background:var(--stone);}
+.method{
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  padding:4px 9px;border-radius:4px;letter-spacing:0.04em;flex-shrink:0;
+}
+.method.GET{background:#E6F9F3;color:#0B7C6E;}
+.method.POST{background:#EBF4FF;color:#003F87;}
+.method.PUT{background:#FFF8E6;color:#B7860A;}
+.method.DELETE{background:#FEF0EE;color:#E8523A;}
+.ep-path{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);}
+.ep-desc{margin-left:auto;font-size:12px;color:var(--text-soft);text-align:right;}
+.ep-body{padding:1rem 1.2rem;display:none;}
+.ep-body.open{display:block;}
+.ep-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-soft);margin-bottom:6px;margin-top:1rem;}
+.ep-section-label:first-child{margin-top:0;}
+
+/* ── CALLOUT BOXES ── */
+.callout{
+  border-radius:var(--r-md);padding:1rem 1.2rem;
+  margin:1rem 0;display:flex;gap:12px;
+  border-left:4px solid;
+}
+.callout.info{background:var(--teal-soft);border-color:var(--teal);}
+.callout.warn{background:#FFF8E6;border-color:#D97706;}
+.callout.danger{background:var(--coral-soft);border-color:var(--coral);}
+.callout.tip{background:var(--purple-soft);border-color:var(--purple);}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:2px;}
+.callout-body{flex:1;font-size:13px;line-height:1.6;}
+.callout-body strong{font-weight:600;display:block;margin-bottom:3px;}
+
+/* ── INTEGRATION STEPS ── */
+.step-row{display:flex;gap:16px;margin-bottom:1.5rem;position:relative;}
+.step-row:not(:last-child)::after{content:'';position:absolute;left:17px;top:38px;bottom:-16px;width:2px;background:var(--border);}
+.step-num{width:36px;height:36px;border-radius:50%;background:var(--navy);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;z-index:1;}
+.step-content{flex:1;padding-top:6px;}
+.step-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.step-desc{font-size:13px;color:var(--text-soft);line-height:1.6;}
+
+/* ── TECH STACK GRID ── */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:1rem 0 1.5rem;}
+.tech-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:1rem;}
+.tc-layer{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-soft);margin-bottom:6px;}
+.tc-name{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:2px;}
+.tc-desc{font-size:12px;color:var(--text-soft);}
+.tc-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-top:6px;}
+.tc-badge.free{background:var(--green-soft);color:var(--green);}
+.tc-badge.paid{background:#FFF8E6;color:#B7860A;}
+.tc-badge.core{background:var(--teal-soft);color:var(--teal);}
+
+/* ── ENV VARS TABLE ── */
+.env-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:13px;}
+.env-table tr{border-bottom:1px solid var(--border);}
+.env-table tr:last-child{border-bottom:none;}
+.env-table td{padding:8px 12px;vertical-align:top;}
+.env-table td:first-child{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--navy-mid);width:38%;background:var(--sand);border-radius:var(--r-sm);}
+.env-table td:last-child{color:var(--text-soft);}
+
+/* ── INLINE CODE ── */
+code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--sand);padding:2px 6px;border-radius:4px;color:var(--navy-mid);border:1px solid var(--border);}
+
+/* ── ERD DIAGRAM ── */
+.erd-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;overflow-x:auto;margin:1rem 0 1.5rem;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.sidenav{display:none;}.main{margin-left:0;padding:1.5rem;}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sidenav">
+  <div class="sn-logo">
+    <div class="sn-logo-row">
+      <div class="sn-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L5 5H19L21 11V17H19V19H17V17H7V19H5V17H3V11Z" fill="#002D62"/><rect x="6" y="12" width="3" height="3" rx="1" fill="#002D62" opacity=".5"/><rect x="15" y="12" width="3" height="3" rx="1" fill="#002D62" opacity=".5"/><path d="M5 11H19" stroke="#002D62" stroke-width="1.2"/></svg>
+      </div>
+      <span class="sn-logo-name">SchoolRide</span>
+    </div>
+    <div class="sn-logo-sub">Backend Architecture Guide</div>
+    <div class="sn-doc-title">Database · API · SMS · Push · Auth</div>
+  </div>
+
+  <div class="sn-section">Overview</div>
+  <a href="#stack" class="sn-link">Tech Stack</a>
+  <a href="#env" class="sn-link">Environment Setup</a>
+
+  <div class="sn-section">Database</div>
+  <a href="#db-overview" class="sn-link">Schema Overview</a>
+  <a href="#db-users" class="sn-link sub">users &amp; students</a>
+  <a href="#db-routes" class="sn-link sub">routes &amp; stops</a>
+  <a href="#db-assignments" class="sn-link sub">assignments</a>
+  <a href="#db-notifications" class="sn-link sub">notifications</a>
+  <a href="#db-fleet" class="sn-link sub">fleet &amp; drivers</a>
+  <a href="#db-indexes" class="sn-link sub">indexes &amp; RLS</a>
+
+  <div class="sn-section">API Design</div>
+  <a href="#api-auth" class="sn-link">Auth Endpoints</a>
+  <a href="#api-students" class="sn-link">Students</a>
+  <a href="#api-routes" class="sn-link">Routes &amp; Stops</a>
+  <a href="#api-notifications" class="sn-link">Notifications</a>
+  <a href="#api-fleet" class="sn-link">Fleet</a>
+
+  <div class="sn-section">Integrations</div>
+  <a href="#sms" class="sn-link">SMS via Digicel</a>
+  <a href="#push" class="sn-link">Push via Firebase</a>
+  <a href="#auth" class="sn-link">Auth &amp; SSO</a>
+  <a href="#worker" class="sn-link">Background Workers</a>
+  <a href="#deploy" class="sn-link">Deployment</a>
+
+  <div class="sn-footer">SchoolRide BB · v1.0.0 · 2025</div>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="doc-hero">
+    <div class="doc-eyebrow">Technical Reference — Module 5</div>
+    <h1 class="doc-title">Backend Architecture</h1>
+    <p class="doc-sub">Complete database schema, REST API specification, and production integration guide for SMS delivery via Digicel Barbados and push notifications via Firebase Cloud Messaging.</p>
+    <div class="doc-meta">
+      <div class="meta-chip">🗄 PostgreSQL 16 + PostGIS</div>
+      <div class="meta-chip">⚡ Supabase + Node.js</div>
+      <div class="meta-chip">📱 Firebase FCM</div>
+      <div class="meta-chip">📲 Digicel SMS Gateway</div>
+      <div class="meta-chip">🔐 JWT + RLS</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 1. TECH STACK ═══ -->
+  <div class="doc-section" id="stack">
+    <h2 class="sec-title"><span class="sec-num">1</span> Recommended Tech Stack</h2>
+    <p class="sec-intro">Each layer is chosen for cost-effectiveness in a small-island context — minimal DevOps overhead, local SMS gateway compatibility, and generous free tiers for a government-education workload.</p>
+
+    <div class="tech-grid">
+      <div class="tech-card"><div class="tc-layer">Database</div><div class="tc-name">Supabase (PostgreSQL)</div><div class="tc-desc">Managed Postgres with PostGIS, Row Level Security, and realtime subscriptions built in.</div><span class="tc-badge free">Free tier available</span></div>
+      <div class="tech-card"><div class="tc-layer">API Server</div><div class="tc-name">Node.js + Express</div><div class="tc-desc">REST API on Node 20 LTS. Hosted on Railway or Render — both deploy from Git with zero config.</div><span class="tc-badge free">Free tier available</span></div>
+      <div class="tech-card"><div class="tc-layer">Auth</div><div class="tc-name">Supabase Auth</div><div class="tc-desc">JWT-based auth with Row Level Security. Ministry SSO via SAML 2.0 integration path included.</div><span class="tc-badge core">Core dependency</span></div>
+      <div class="tech-card"><div class="tc-layer">Push Notifications</div><div class="tc-name">Firebase FCM</div><div class="tc-desc">Google's Cloud Messaging. Free for all volumes. Works on Android (dominant in Barbados) and iOS.</div><span class="tc-badge free">Always free</span></div>
+      <div class="tech-card"><div class="tc-layer">SMS Gateway</div><div class="tc-name">Digicel Barbados API</div><div class="tc-desc">Local carrier API. Best delivery rates in Barbados. Supports bulk SMS and delivery receipts.</div><span class="tc-badge paid">Pay per SMS</span></div>
+      <div class="tech-card"><div class="tc-layer">Background Jobs</div><div class="tc-name">Supabase Edge Functions</div><div class="tc-desc">Deno-based serverless workers for scheduled alerts, delivery retries, and daily schedule jobs.</div><span class="tc-badge free">Free tier available</span></div>
+      <div class="tech-card"><div class="tc-layer">File Storage</div><div class="tc-name">Supabase Storage</div><div class="tc-desc">For profile photos, route map exports, and schedule PDFs sent to parents.</div><span class="tc-badge free">1 GB free</span></div>
+      <div class="tech-card"><div class="tc-layer">Hosting</div><div class="tc-name">Vercel (Frontend)</div><div class="tc-desc">Next.js deployment with global CDN. Caribbean PoP via Miami ensures fast loads for Barbados users.</div><span class="tc-badge free">Hobby free tier</span></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ ENVIRONMENT ═══ -->
+  <div class="doc-section" id="env">
+    <h2 class="sec-title"><span class="sec-num">2</span> Environment Variables</h2>
+    <p class="sec-intro">Store all secrets in <code>.env</code> (never commit to Git). Use Railway or Render's environment variable panel in production.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">dotenv</span><span class="code-label">.env</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre><span class="c"># ── Supabase ──────────────────────────────────────</span>
+<span class="n">SUPABASE_URL</span>=<span class="s">https://xxxxxxxxxxxx.supabase.co</span>
+<span class="n">SUPABASE_ANON_KEY</span>=<span class="s">eyJhbGciOiJIUzI1NiIs...</span>
+<span class="n">SUPABASE_SERVICE_ROLE_KEY</span>=<span class="s">eyJhbGciOiJIUzI1NiIs...</span>   <span class="c"># server-side only, never expose</span>
+
+<span class="c"># ── JWT ───────────────────────────────────────────</span>
+<span class="n">JWT_SECRET</span>=<span class="s">your-very-long-random-secret-min-32-chars</span>
+<span class="n">JWT_EXPIRY</span>=<span class="s">7d</span>
+
+<span class="c"># ── Digicel SMS Gateway ───────────────────────────</span>
+<span class="n">DIGICEL_API_URL</span>=<span class="s">https://api.digicelgroup.com/sms/v1</span>
+<span class="n">DIGICEL_API_KEY</span>=<span class="s">dg_live_xxxxxxxxxxxxxxxx</span>
+<span class="n">DIGICEL_SENDER_ID</span>=<span class="s">SchoolRide</span>   <span class="c"># max 11 chars, registered with Digicel</span>
+
+<span class="c"># ── Firebase FCM ──────────────────────────────────</span>
+<span class="n">FIREBASE_PROJECT_ID</span>=<span class="s">schoolride-barbados</span>
+<span class="n">FIREBASE_PRIVATE_KEY_ID</span>=<span class="s">abc123...</span>
+<span class="n">FIREBASE_PRIVATE_KEY</span>=<span class="s">"-----BEGIN RSA PRIVATE KEY-----\n..."</span>
+<span class="n">FIREBASE_CLIENT_EMAIL</span>=<span class="s">firebase-adminsdk@schoolride-barbados.iam.gserviceaccount.com</span>
+
+<span class="c"># ── App ───────────────────────────────────────────</span>
+<span class="n">NODE_ENV</span>=<span class="s">production</span>
+<span class="n">PORT</span>=<span class="v">3001</span>
+<span class="n">API_BASE_URL</span>=<span class="s">https://api.schoolridebb.gov.bb</span>
+<span class="n">FRONTEND_URL</span>=<span class="s">https://schoolridebb.gov.bb</span></pre>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 3. DATABASE ═══ -->
+  <div class="doc-section" id="db-overview">
+    <h2 class="sec-title"><span class="sec-num">3</span> Database Schema</h2>
+    <p class="sec-intro">PostgreSQL 16 hosted on Supabase. All tables use UUID primary keys, <code>created_at</code> / <code>updated_at</code> timestamps, and Row Level Security policies. PostGIS is enabled for geospatial stop coordinates.</p>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ️</span>
+      <div class="callout-body"><strong>Run once to enable PostGIS</strong><code>CREATE EXTENSION IF NOT EXISTS postgis;</code> in your Supabase SQL editor before running the schema migrations below.</div>
+    </div>
+
+    <!-- Users -->
+    <h3 class="sub-title" id="db-users">users</h3>
+    <p style="font-size:13px;color:var(--text-soft);margin-bottom:0.8rem;">Extends Supabase's built-in <code>auth.users</code> table. One row per portal user — students, parents, admins, and drivers all live here.</p>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td><span class="col-nn">NOT NULL</span></td><td class="col-desc">References auth.users(id) — Supabase managed</td></tr>
+        <tr><td>role</td><td><span class="col-type">text</span></td><td><span class="col-nn">NOT NULL</span></td><td class="col-desc">'student' | 'parent' | 'admin' | 'driver'</td></tr>
+        <tr><td>first_name</td><td><span class="col-type">text</span></td><td><span class="col-nn">NOT NULL</span></td><td class="col-desc">Given name</td></tr>
+        <tr><td>last_name</td><td><span class="col-type">text</span></td><td><span class="col-nn">NOT NULL</span></td><td class="col-desc">Family name</td></tr>
+        <tr><td>phone</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">Barbados format: +12462XXXXXX — used for SMS delivery</td></tr>
+        <tr><td>fcm_token</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">Firebase Cloud Messaging device token — updated on app open</td></tr>
+        <tr><td>fcm_token_updated_at</td><td><span class="col-type">timestamptz</span></td><td></td><td class="col-desc">Tokens expire after 60 days; refresh if older</td></tr>
+        <tr><td>sms_opt_in</td><td><span class="col-type">boolean</span></td><td>DEFAULT true</td><td class="col-desc">GDPR/PDPA consent flag for SMS</td></tr>
+        <tr><td>created_at</td><td><span class="col-type">timestamptz</span></td><td>DEFAULT now()</td><td class="col-desc"></td></tr>
+        <tr><td>updated_at</td><td><span class="col-type">timestamptz</span></td><td>DEFAULT now()</td><td class="col-desc">Auto-updated via trigger</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Students -->
+    <h3 class="sub-title">students</h3>
+    <p style="font-size:13px;color:var(--text-soft);margin-bottom:0.8rem;">Student-specific profile data, linked to the users table. One row per enrolled student.</p>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td><span class="col-nn">NOT NULL</span></td><td class="col-desc">DEFAULT gen_random_uuid()</td></tr>
+        <tr><td>user_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td><span class="col-nn">NOT NULL</span></td><td class="col-desc">REFERENCES users(id) ON DELETE CASCADE</td></tr>
+        <tr><td>student_id_code</td><td><span class="col-type">text</span></td><td>UNIQUE NOT NULL</td><td class="col-desc">Ministry ID e.g. BJS-2024-04821</td></tr>
+        <tr><td>school_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td><span class="col-nn">NOT NULL</span></td><td class="col-desc">REFERENCES schools(id)</td></tr>
+        <tr><td>form_class</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">e.g. '4B', '6L'</td></tr>
+        <tr><td>home_address</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">Full text address</td></tr>
+        <tr><td>home_location</td><td><span class="col-type">geography(Point,4326)</span></td><td></td><td class="col-desc">PostGIS point — lat/lon of home for walk distance calc</td></tr>
+        <tr><td>stop_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc">REFERENCES stops(id) — assigned pick-up stop (nullable until assigned)</td></tr>
+        <tr><td>route_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc">REFERENCES routes(id) — denormalised for fast queries</td></tr>
+        <tr><td>academic_year</td><td><span class="col-type">text</span></td><td>NOT NULL</td><td class="col-desc">e.g. '2024-2025' — allows multi-year history</td></tr>
+        <tr><td>is_active</td><td><span class="col-type">boolean</span></td><td>DEFAULT true</td><td class="col-desc">Soft-delete / leave of absence flag</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Routes & Stops -->
+    <h3 class="sub-title" id="db-routes">routes</h3>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc">DEFAULT gen_random_uuid()</td></tr>
+        <tr><td>route_number</td><td><span class="col-type">text</span></td><td>UNIQUE NOT NULL</td><td class="col-desc">e.g. '12', '5', '7'</td></tr>
+        <tr><td>name</td><td><span class="col-type">text</span></td><td>NOT NULL</td><td class="col-desc">e.g. 'Route 12 — North'</td></tr>
+        <tr><td>terminus_stop_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc">REFERENCES stops(id) — departure terminal</td></tr>
+        <tr><td>school_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td>NOT NULL</td><td class="col-desc">REFERENCES schools(id)</td></tr>
+        <tr><td>bus_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc">REFERENCES buses(id)</td></tr>
+        <tr><td>driver_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc">REFERENCES users(id) WHERE role='driver'</td></tr>
+        <tr><td>departure_time</td><td><span class="col-type">time</span></td><td>NOT NULL</td><td class="col-desc">Morning departure from terminus e.g. '06:10:00'</td></tr>
+        <tr><td>return_time</td><td><span class="col-type">time</span></td><td></td><td class="col-desc">Afternoon return departure from school</td></tr>
+        <tr><td>geom</td><td><span class="col-type">geography(LineString,4326)</span></td><td></td><td class="col-desc">PostGIS route polyline — used for map rendering</td></tr>
+        <tr><td>is_active</td><td><span class="col-type">boolean</span></td><td>DEFAULT true</td><td class="col-desc"></td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-title">stops</h3>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc"></td></tr>
+        <tr><td>name</td><td><span class="col-type">text</span></td><td>NOT NULL</td><td class="col-desc">e.g. 'Clapham Main Rd'</td></tr>
+        <tr><td>parish</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">Barbados parish name</td></tr>
+        <tr><td>stop_type</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">'standard' | 'shelter' | 'terminal' | 'school_gate'</td></tr>
+        <tr><td>location</td><td><span class="col-type">geography(Point,4326)</span></td><td>NOT NULL</td><td class="col-desc">GPS coordinates (lon, lat)</td></tr>
+        <tr><td>notes</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">Landmark description for students</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-title">route_stops</h3>
+    <p style="font-size:13px;color:var(--text-soft);margin-bottom:0.8rem;">Junction table defining stop order and scheduled times within each route.</p>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc"></td></tr>
+        <tr><td>route_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td>NOT NULL</td><td class="col-desc">REFERENCES routes(id) ON DELETE CASCADE</td></tr>
+        <tr><td>stop_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td>NOT NULL</td><td class="col-desc">REFERENCES stops(id)</td></tr>
+        <tr><td>stop_order</td><td><span class="col-type">smallint</span></td><td>NOT NULL</td><td class="col-desc">Sequence position: 1, 2, 3…</td></tr>
+        <tr><td>scheduled_arrival</td><td><span class="col-type">time</span></td><td>NOT NULL</td><td class="col-desc">Expected arrival at this stop on morning run</td></tr>
+        <tr><td>UNIQUE</td><td colspan="3" style="color:var(--text-soft);">(route_id, stop_id) and (route_id, stop_order)</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Notifications -->
+    <h3 class="sub-title" id="db-notifications">notifications</h3>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc"></td></tr>
+        <tr><td>created_by<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td>NOT NULL</td><td class="col-desc">REFERENCES users(id) — admin who sent it</td></tr>
+        <tr><td>alert_type</td><td><span class="col-type">text</span></td><td>NOT NULL</td><td class="col-desc">'delay' | 'cancel' | 'driver' | 'stop' | 'holiday' | 'general'</td></tr>
+        <tr><td>title</td><td><span class="col-type">text</span></td><td>NOT NULL</td><td class="col-desc">Short subject line — used as push notification title</td></tr>
+        <tr><td>message</td><td><span class="col-type">text</span></td><td>NOT NULL</td><td class="col-desc">Full message body — max 320 chars for SMS compliance</td></tr>
+        <tr><td>route_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc">NULL = all routes</td></tr>
+        <tr><td>channels</td><td><span class="col-type">text[]</span></td><td>NOT NULL</td><td class="col-desc">Array: ['sms', 'push', 'email']</td></tr>
+        <tr><td>urgency</td><td><span class="col-type">text</span></td><td>DEFAULT 'medium'</td><td class="col-desc">'high' | 'medium' | 'low'</td></tr>
+        <tr><td>scheduled_for</td><td><span class="col-type">timestamptz</span></td><td></td><td class="col-desc">NULL = send immediately</td></tr>
+        <tr><td>sent_at</td><td><span class="col-type">timestamptz</span></td><td></td><td class="col-desc">Populated when dispatch completes</td></tr>
+        <tr><td>recipient_count</td><td><span class="col-type">integer</span></td><td></td><td class="col-desc">Total students targeted</td></tr>
+        <tr><td>delivered_count</td><td><span class="col-type">integer</span></td><td>DEFAULT 0</td><td class="col-desc">Confirmed deliveries (updated by webhooks)</td></tr>
+        <tr><td>failed_count</td><td><span class="col-type">integer</span></td><td>DEFAULT 0</td><td class="col-desc">Failed deliveries</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-title">notification_receipts</h3>
+    <p style="font-size:13px;color:var(--text-soft);margin-bottom:0.8rem;">Per-student delivery tracking — one row per student per notification.</p>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc"></td></tr>
+        <tr><td>notification_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td>NOT NULL</td><td class="col-desc">REFERENCES notifications(id)</td></tr>
+        <tr><td>user_id<span class="col-fk">FK</span></td><td><span class="col-type">uuid</span></td><td>NOT NULL</td><td class="col-desc">REFERENCES users(id)</td></tr>
+        <tr><td>channel</td><td><span class="col-type">text</span></td><td>NOT NULL</td><td class="col-desc">'sms' | 'push' | 'email'</td></tr>
+        <tr><td>status</td><td><span class="col-type">text</span></td><td>DEFAULT 'pending'</td><td class="col-desc">'pending' | 'sent' | 'delivered' | 'failed' | 'read'</td></tr>
+        <tr><td>gateway_message_id</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">Digicel/FCM message ID for delivery receipt matching</td></tr>
+        <tr><td>read_at</td><td><span class="col-type">timestamptz</span></td><td></td><td class="col-desc">When student opened notification in app</td></tr>
+        <tr><td>is_unread</td><td><span class="col-type">boolean</span></td><td>DEFAULT true</td><td class="col-desc">Student-facing unread flag</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Fleet -->
+    <h3 class="sub-title" id="db-fleet">buses</h3>
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>id<span class="col-pk">PK</span></td><td><span class="col-type">uuid</span></td><td></td><td class="col-desc"></td></tr>
+        <tr><td>fleet_number</td><td><span class="col-type">text</span></td><td>UNIQUE NOT NULL</td><td class="col-desc">e.g. 'R-47'</td></tr>
+        <tr><td>make_model</td><td><span class="col-type">text</span></td><td></td><td class="col-desc">e.g. 'Toyota Coaster 2022'</td></tr>
+        <tr><td>seat_capacity</td><td><span class="col-type">smallint</span></td><td>NOT NULL</td><td class="col-desc">Licensed passenger capacity</td></tr>
+        <tr><td>has_ac</td><td><span class="col-type">boolean</span></td><td>DEFAULT false</td><td class="col-desc"></td></tr>
+        <tr><td>has_gps</td><td><span class="col-type">boolean</span></td><td>DEFAULT false</td><td class="col-desc">Enables live tracking feed if true</td></tr>
+        <tr><td>status</td><td><span class="col-type">text</span></td><td>DEFAULT 'active'</td><td class="col-desc">'active' | 'maintenance' | 'retired'</td></tr>
+        <tr><td>last_gps_location</td><td><span class="col-type">geography(Point,4326)</span></td><td></td><td class="col-desc">Updated every 30s by GPS tracker if equipped</td></tr>
+        <tr><td>last_gps_update</td><td><span class="col-type">timestamptz</span></td><td></td><td class="col-desc"></td></tr>
+      </tbody>
+    </table>
+
+    <!-- Indexes -->
+    <h3 class="sub-title" id="db-indexes">Key Indexes &amp; Row Level Security</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">SQL</span><span class="code-label">migrations/002_indexes_rls.sql</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre><span class="c">-- Performance indexes</span>
+<span class="cm">CREATE INDEX</span> idx_students_route_id <span class="cm">ON</span> students(route_id);
+<span class="cm">CREATE INDEX</span> idx_students_stop_id  <span class="cm">ON</span> students(stop_id);
+<span class="cm">CREATE INDEX</span> idx_students_school   <span class="cm">ON</span> students(school_id, academic_year);
+<span class="cm">CREATE INDEX</span> idx_notif_receipts_user <span class="cm">ON</span> notification_receipts(user_id, is_unread);
+<span class="cm">CREATE INDEX</span> idx_route_stops_route  <span class="cm">ON</span> route_stops(route_id, stop_order);
+<span class="cm">CREATE INDEX</span> idx_stops_location     <span class="cm">ON</span> stops <span class="cm">USING</span> GIST(location);
+<span class="cm">CREATE INDEX</span> idx_buses_gps          <span class="cm">ON</span> buses <span class="cm">USING</span> GIST(last_gps_location);
+
+<span class="c">-- Enable Row Level Security on all tables</span>
+<span class="cm">ALTER TABLE</span> users                  <span class="cm">ENABLE ROW LEVEL SECURITY</span>;
+<span class="cm">ALTER TABLE</span> students               <span class="cm">ENABLE ROW LEVEL SECURITY</span>;
+<span class="cm">ALTER TABLE</span> notification_receipts  <span class="cm">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="c">-- Students can only see their own data</span>
+<span class="cm">CREATE POLICY</span> <span class="s">"students_own_data"</span> <span class="cm">ON</span> students
+  <span class="cm">FOR SELECT USING</span> (user_id = auth.uid());
+
+<span class="c">-- Students can only read their own notification receipts</span>
+<span class="cm">CREATE POLICY</span> <span class="s">"own_receipts"</span> <span class="cm">ON</span> notification_receipts
+  <span class="cm">FOR ALL USING</span> (user_id = auth.uid());
+
+<span class="c">-- Admins bypass RLS (via service role key in API layer)</span>
+<span class="cm">CREATE POLICY</span> <span class="s">"admin_all"</span> <span class="cm">ON</span> students
+  <span class="cm">FOR ALL USING</span> (
+    <span class="cm">EXISTS</span> (<span class="cm">SELECT</span> <span class="v">1</span> <span class="cm">FROM</span> users
+             <span class="cm">WHERE</span> id = auth.uid() <span class="cm">AND</span> role = <span class="s">'admin'</span>)
+  );</pre>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 4. API ═══ -->
+  <div class="doc-section" id="api-auth">
+    <h2 class="sec-title"><span class="sec-num">4</span> REST API Design</h2>
+    <p class="sec-intro">All endpoints are prefixed with <code>/api/v1</code>. Authentication uses Bearer JWT tokens issued by Supabase Auth. Admin routes require <code>role: 'admin'</code> in the JWT claims.</p>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body"><strong>Rate limiting</strong> Apply express-rate-limit: 100 req/min per IP for public endpoints, 1000 req/min for authenticated student sessions, and 10 req/min on the login endpoint to prevent brute force.</div>
+    </div>
+
+    <h3 class="sub-title" id="api-auth">Authentication</h3>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method POST">POST</span>
+        <span class="ep-path">/api/v1/auth/login</span>
+        <span class="ep-desc">Student or admin login</span>
+      </div>
+      <div class="ep-body open">
+        <div class="ep-section-label">Request body</div>
+        <div class="code-block" style="margin:0 0 0.8rem;">
+          <pre style="padding:0.8rem 1rem;">{ <span class="s">"student_id_code"</span>: <span class="s">"BJS-2024-04821"</span>, <span class="s">"password"</span>: <span class="s">"..."</span>, <span class="s">"school_id"</span>: <span class="s">"uuid"</span> }</pre>
+        </div>
+        <div class="ep-section-label">Response 200</div>
+        <div class="code-block" style="margin:0;">
+          <pre style="padding:0.8rem 1rem;">{
+  <span class="s">"access_token"</span>: <span class="s">"eyJhbGci..."</span>,
+  <span class="s">"refresh_token"</span>: <span class="s">"..."</span>,
+  <span class="s">"user"</span>: {
+    <span class="s">"id"</span>: <span class="s">"uuid"</span>, <span class="s">"role"</span>: <span class="s">"student"</span>,
+    <span class="s">"first_name"</span>: <span class="s">"Alicia"</span>, <span class="s">"last_name"</span>: <span class="s">"Morrison"</span>,
+    <span class="s">"student"</span>: { <span class="s">"route_id"</span>: <span class="s">"uuid"</span>, <span class="s">"stop_id"</span>: <span class="s">"uuid"</span>, <span class="s">"school"</span>: <span class="s">"Harrison College"</span> }
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method POST">POST</span>
+        <span class="ep-path">/api/v1/auth/fcm-token</span>
+        <span class="ep-desc">Register or refresh device push token</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Request body — Auth required</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">{ <span class="s">"fcm_token"</span>: <span class="s">"firebase_device_token_here"</span> }</pre></div>
+      </div>
+    </div>
+
+    <h3 class="sub-title" id="api-students">Students</h3>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method GET">GET</span>
+        <span class="ep-path">/api/v1/student/me</span>
+        <span class="ep-desc">Full student profile with route &amp; stop</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Auth required — student role</div>
+        <div class="code-block" style="margin:0;">
+          <pre style="padding:0.8rem 1rem;">{
+  <span class="s">"student"</span>: { <span class="s">"id"</span>: <span class="s">"..."</span>, <span class="s">"student_id_code"</span>: <span class="s">"BJS-2024-04821"</span>, <span class="s">"form_class"</span>: <span class="s">"4B"</span> },
+  <span class="s">"route"</span>: { <span class="s">"id"</span>: <span class="s">"..."</span>, <span class="s">"name"</span>: <span class="s">"Route 12 — North"</span>, <span class="s">"departure_time"</span>: <span class="s">"06:10"</span> },
+  <span class="s">"stop"</span>: {
+    <span class="s">"id"</span>: <span class="s">"..."</span>, <span class="s">"name"</span>: <span class="s">"Clapham Main Rd"</span>,
+    <span class="s">"scheduled_arrival"</span>: <span class="s">"06:47"</span>,
+    <span class="s">"location"</span>: { <span class="s">"lat"</span>: <span class="v">13.0847</span>, <span class="s">"lng"</span>: <span class="v">-59.6042</span> },
+    <span class="s">"walk_distance_km"</span>: <span class="v">0.4</span>,
+    <span class="s">"walk_minutes"</span>: <span class="v">5</span>
+  },
+  <span class="s">"school"</span>: { <span class="s">"name"</span>: <span class="s">"Harrison College"</span>, <span class="s">"arrival_time"</span>: <span class="s">"07:25"</span> }
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method GET">GET</span>
+        <span class="ep-path">/api/v1/admin/students</span>
+        <span class="ep-desc">Paginated student registry with filters</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Query params — Admin role</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">?school_id=uuid &amp;route_id=uuid &amp;status=unassigned &amp;q=Morrison &amp;page=1 &amp;limit=50</pre></div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method POST">POST</span>
+        <span class="ep-path">/api/v1/admin/students</span>
+        <span class="ep-desc">Create and assign a new student</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Request body — Admin role</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">{ <span class="s">"first_name"</span>: <span class="s">"Alicia"</span>, <span class="s">"last_name"</span>: <span class="s">"Morrison"</span>, <span class="s">"student_id_code"</span>: <span class="s">"BJS-2024-04821"</span>,
+  <span class="s">"school_id"</span>: <span class="s">"uuid"</span>, <span class="s">"form_class"</span>: <span class="s">"4B"</span>, <span class="s">"home_address"</span>: <span class="s">"14 Clapham Heights"</span>,
+  <span class="s">"home_lat"</span>: <span class="v">13.0901</span>, <span class="s">"home_lng"</span>: <span class="v">-59.6021</span>,
+  <span class="s">"route_id"</span>: <span class="s">"uuid"</span>, <span class="s">"stop_id"</span>: <span class="s">"uuid"</span>, <span class="s">"phone"</span>: <span class="s">"+12461234567"</span> }</pre></div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method PUT">PUT</span>
+        <span class="ep-path">/api/v1/admin/students/:id/assign</span>
+        <span class="ep-desc">Assign or reassign a student's route &amp; stop</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Request body — Admin role</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">{ <span class="s">"route_id"</span>: <span class="s">"uuid"</span>, <span class="s">"stop_id"</span>: <span class="s">"uuid"</span> }</pre></div>
+      </div>
+    </div>
+
+    <h3 class="sub-title" id="api-routes">Routes &amp; Stops</h3>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method GET">GET</span>
+        <span class="ep-path">/api/v1/routes/:id</span>
+        <span class="ep-desc">Full route with ordered stops and bus info</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Response — Public (no auth needed)</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">{ <span class="s">"route"</span>: { <span class="s">"id"</span>: <span class="s">"..."</span>, <span class="s">"name"</span>: <span class="s">"Route 12 — North"</span>, <span class="s">"geom"</span>: { <span class="s">"type"</span>: <span class="s">"LineString"</span>, ... } },
+  <span class="s">"stops"</span>: [
+    { <span class="s">"stop_order"</span>: <span class="v">1</span>, <span class="s">"name"</span>: <span class="s">"Speightstown Terminal"</span>, <span class="s">"scheduled_arrival"</span>: <span class="s">"06:10"</span>,
+      <span class="s">"location"</span>: { <span class="s">"lat"</span>: <span class="v">13.2437</span>, <span class="s">"lng"</span>: <span class="v">-59.6484</span> } }, ...
+  ],
+  <span class="s">"bus"</span>: { <span class="s">"fleet_number"</span>: <span class="s">"R-47"</span>, <span class="s">"seat_capacity"</span>: <span class="v">30</span>, <span class="s">"has_gps"</span>: <span class="k">true</span> }
+}</pre></div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method GET">GET</span>
+        <span class="ep-path">/api/v1/stops/nearest</span>
+        <span class="ep-desc">Find nearest stops to a coordinate</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Query params</div>
+        <div class="code-block" style="margin:0 0 0.8rem;"><pre style="padding:0.8rem 1rem;">?lat=13.0847&amp;lng=-59.6042&amp;radius_km=2&amp;limit=5</pre></div>
+        <div class="ep-section-label">Uses PostGIS ST_DWithin for radius search</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;"><span class="cm">SELECT</span> id, name, route_id,
+  ST_Distance(location, ST_MakePoint(<span class="v">-59.6042</span>, <span class="v">13.0847</span>)::geography) <span class="cm">AS</span> dist_m
+<span class="cm">FROM</span> stops
+<span class="cm">WHERE</span> ST_DWithin(location, ST_MakePoint(<span class="v">-59.6042</span>, <span class="v">13.0847</span>)::geography, <span class="v">2000</span>)
+<span class="cm">ORDER BY</span> dist_m <span class="cm">LIMIT</span> <span class="v">5</span>;</pre></div>
+      </div>
+    </div>
+
+    <h3 class="sub-title" id="api-notifications">Notifications</h3>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method POST">POST</span>
+        <span class="ep-path">/api/v1/admin/notifications</span>
+        <span class="ep-desc">Compose and dispatch an alert</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Request body — Admin role</div>
+        <div class="code-block" style="margin:0 0 0.8rem;"><pre style="padding:0.8rem 1rem;">{ <span class="s">"alert_type"</span>: <span class="s">"delay"</span>, <span class="s">"title"</span>: <span class="s">"Route 12 — 3 min delay"</span>,
+  <span class="s">"message"</span>: <span class="s">"Roadworks near Warrens causing approx 3 min delay."</span>,
+  <span class="s">"route_id"</span>: <span class="s">"uuid-or-null-for-all"</span>,
+  <span class="s">"channels"</span>: [<span class="s">"sms"</span>, <span class="s">"push"</span>],
+  <span class="s">"urgency"</span>: <span class="s">"high"</span>,
+  <span class="s">"scheduled_for"</span>: <span class="k">null</span> }</pre></div>
+        <div class="ep-section-label">Response 202 — dispatch queued</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">{ <span class="s">"notification_id"</span>: <span class="s">"uuid"</span>, <span class="s">"status"</span>: <span class="s">"queued"</span>, <span class="s">"recipient_count"</span>: <span class="v">94</span> }</pre></div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method GET">GET</span>
+        <span class="ep-path">/api/v1/student/notifications</span>
+        <span class="ep-desc">Student's notification inbox</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Query params — student auth required</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">?unread=true&amp;page=1&amp;limit=20</pre></div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method PUT">PUT</span>
+        <span class="ep-path">/api/v1/student/notifications/:id/read</span>
+        <span class="ep-desc">Mark a notification as read</span>
+      </div>
+      <div class="ep-body">
+        <p style="font-size:13px;color:var(--text-soft);padding:0.5rem 0;">Updates <code>is_unread = false</code> and sets <code>read_at = now()</code> on the student's receipt row. No body required.</p>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="ep-header" onclick="toggleEp(this)">
+        <span class="method POST">POST</span>
+        <span class="ep-path">/api/v1/webhooks/sms-delivery</span>
+        <span class="ep-desc">Digicel delivery receipt callback</span>
+      </div>
+      <div class="ep-body">
+        <div class="ep-section-label">Called by Digicel — validate signature header</div>
+        <div class="code-block" style="margin:0;"><pre style="padding:0.8rem 1rem;">{ <span class="s">"message_id"</span>: <span class="s">"dg_msg_xxxx"</span>, <span class="s">"status"</span>: <span class="s">"DELIVRD"</span>, <span class="s">"recipient"</span>: <span class="s">"+12461234567"</span>, <span class="s">"timestamp"</span>: <span class="s">"..."</span> }
+<span class="c">// status values: DELIVRD | UNDELIV | EXPIRED | REJECTED</span></pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 5. SMS ═══ -->
+  <div class="doc-section" id="sms">
+    <h2 class="sec-title"><span class="sec-num">5</span> SMS Integration — Digicel Barbados</h2>
+    <p class="sec-intro">Digicel is the dominant carrier in Barbados (~65% market share). Their bulk SMS API supports two-way messaging, sender ID registration, and delivery webhooks. FLOW (C&amp;W) students are also reachable via the same gateway.</p>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body"><strong>Registration required</strong> You must register your sender ID ("SchoolRide") with Digicel before going live. This takes 5–10 business days. Contact: enterprise@digicelgroup.com with your MOE authorisation letter.</div>
+    </div>
+
+    <h3 class="sub-title">Installation</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre>npm install axios crypto-js</pre>
+    </div>
+
+    <h3 class="sub-title">SMS Service</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">JavaScript</span><span class="code-label">src/services/sms.service.js</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre><span class="k">const</span> axios = <span class="n">require</span>(<span class="s">'axios'</span>);
+<span class="k">const</span> { createHmac } = <span class="n">require</span>(<span class="s">'crypto'</span>);
+<span class="k">const</span> { supabase } = <span class="n">require</span>(<span class="s">'../lib/supabase'</span>);
+
+<span class="k">const</span> DIGICEL_URL    = process.env.DIGICEL_API_URL;
+<span class="k">const</span> DIGICEL_KEY    = process.env.DIGICEL_API_KEY;
+<span class="k">const</span> SENDER_ID      = process.env.DIGICEL_SENDER_ID; <span class="c">// 'SchoolRide'</span>
+<span class="k">const</span> MAX_BATCH_SIZE = <span class="v">500</span>; <span class="c">// Digicel bulk limit per request</span>
+
+<span class="c">/**
+ * Send an alert to all students on a route (or all routes).
+ * Batches in groups of 500 to respect gateway limits.
+ */</span>
+<span class="k">async function</span> <span class="n">dispatchSMSAlert</span>(notificationId) {
+  <span class="c">// 1. Fetch notification + recipient list from DB</span>
+  <span class="k">const</span> { data: notif } = <span class="k">await</span> supabase
+    .from(<span class="s">'notifications'</span>)
+    .select(<span class="s">'*, routes(id, name)'</span>)
+    .eq(<span class="s">'id'</span>, notificationId)
+    .single();
+
+  <span class="k">let</span> query = supabase
+    .from(<span class="s">'students'</span>)
+    .select(<span class="s">'id, users(phone, sms_opt_in)'</span>)
+    .eq(<span class="s">'is_active'</span>, <span class="k">true</span>)
+    .not(<span class="s">'users.phone'</span>, <span class="s">'is'</span>, <span class="k">null</span>)
+    .eq(<span class="s">'users.sms_opt_in'</span>, <span class="k">true</span>);
+
+  <span class="c">// Filter by route if not a broadcast</span>
+  <span class="k">if</span> (notif.route_id) query = query.eq(<span class="s">'route_id'</span>, notif.route_id);
+
+  <span class="k">const</span> { data: students } = <span class="k">await</span> query;
+  <span class="k">const</span> recipients = students.map(s => s.users.phone);
+
+  <span class="c">// 2. Create per-student receipt rows (status: 'pending')</span>
+  <span class="k">await</span> supabase.from(<span class="s">'notification_receipts'</span>).insert(
+    students.map(s => ({
+      notification_id: notificationId,
+      user_id: s.id,
+      channel: <span class="s">'sms'</span>,
+      status: <span class="s">'pending'</span>
+    }))
+  );
+
+  <span class="c">// 3. Batch and send via Digicel</span>
+  <span class="k">const</span> batches = chunkArray(recipients, MAX_BATCH_SIZE);
+  <span class="k">const</span> results = [];
+
+  <span class="k">for</span> (<span class="k">const</span> batch <span class="k">of</span> batches) {
+    <span class="k">const</span> payload = {
+      sender: SENDER_ID,
+      recipients: batch,
+      message: notif.message,
+      callback_url: <span class="s">`${process.env.API_BASE_URL}/api/v1/webhooks/sms-delivery`</span>,
+      reference: notificationId
+    };
+
+    <span class="k">const</span> response = <span class="k">await</span> axios.post(
+      <span class="s">`${DIGICEL_URL}/messages/bulk`</span>,
+      payload,
+      { headers: { <span class="s">'X-API-Key'</span>: DIGICEL_KEY, <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span> } }
+    );
+    results.push(response.data);
+  }
+
+  <span class="c">// 4. Update notification with delivery stats</span>
+  <span class="k">await</span> supabase.from(<span class="s">'notifications'</span>).update({
+    sent_at: <span class="k">new</span> Date().toISOString(),
+    recipient_count: recipients.length
+  }).eq(<span class="s">'id'</span>, notificationId);
+
+  <span class="k">return</span> { sent: recipients.length, batches: batches.length };
+}
+
+<span class="c">/**
+ * Validate Digicel webhook signature and update delivery receipt.
+ * Call this from POST /api/v1/webhooks/sms-delivery
+ */</span>
+<span class="k">async function</span> <span class="n">handleDeliveryReceipt</span>(req, res) {
+  <span class="c">// Verify HMAC signature from Digicel header</span>
+  <span class="k">const</span> sig       = req.headers[<span class="s">'x-digicel-signature'</span>];
+  <span class="k">const</span> expected  = createHmac(<span class="s">'sha256'</span>, DIGICEL_KEY)
+                     .update(JSON.stringify(req.body))
+                     .digest(<span class="s">'hex'</span>);
+  <span class="k">if</span> (sig !== expected) <span class="k">return</span> res.sendStatus(<span class="v">401</span>);
+
+  <span class="k">const</span> { message_id, status, recipient } = req.body;
+  <span class="k">const</span> dbStatus = statusMap[status] ?? <span class="s">'failed'</span>;
+
+  <span class="k">await</span> supabase.from(<span class="s">'notification_receipts'</span>)
+    .update({ status: dbStatus, gateway_message_id: message_id })
+    .eq(<span class="s">'gateway_message_id'</span>, message_id);
+
+  res.sendStatus(<span class="v">200</span>);
+}
+
+<span class="k">const</span> statusMap = {
+  <span class="s">DELIVRD</span>: <span class="s">'delivered'</span>,
+  <span class="s">UNDELIV</span>: <span class="s">'failed'</span>,
+  <span class="s">EXPIRED</span>: <span class="s">'failed'</span>,
+  <span class="s">REJECTED</span>: <span class="s">'failed'</span>
+};
+
+<span class="k">const</span> <span class="n">chunkArray</span> = (arr, size) =>
+  Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+    arr.slice(i * size, i * size + size));
+
+module.exports = { dispatchSMSAlert, handleDeliveryReceipt };</pre>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body"><strong>SMS cost estimate for Barbados</strong> Digicel charges approximately BBD $0.05–0.08 per SMS. A full school-year with ~50 alerts to 1,284 students would cost roughly BBD $3,200–5,100 — well within a Ministry of Education budget line.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 6. PUSH ═══ -->
+  <div class="doc-section" id="push">
+    <h2 class="sec-title"><span class="sec-num">6</span> Push Notifications — Firebase FCM</h2>
+    <p class="sec-intro">Firebase Cloud Messaging handles push for both Android and iOS with a single API call. FCM is free at all volumes. Students must grant notification permission in the app on first launch.</p>
+
+    <h3 class="sub-title">Installation &amp; Setup</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">bash</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre>npm install firebase-admin
+
+<span class="c"># Download your service account JSON from:</span>
+<span class="c"># Firebase Console → Project Settings → Service Accounts → Generate new key</span></pre>
+    </div>
+
+    <h3 class="sub-title">Push Service</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">JavaScript</span><span class="code-label">src/services/push.service.js</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre><span class="k">const</span> admin = <span class="n">require</span>(<span class="s">'firebase-admin'</span>);
+<span class="k">const</span> { supabase } = <span class="n">require</span>(<span class="s">'../lib/supabase'</span>);
+
+<span class="c">// Initialise once at app startup</span>
+<span class="k">if</span> (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId:   process.env.FIREBASE_PROJECT_ID,
+      privateKey:  process.env.FIREBASE_PRIVATE_KEY.replace(<span class="s">/\\n/g</span>, <span class="s">'\n'</span>),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+    })
+  });
+}
+
+<span class="c">// Alert type → notification colour (Android accent)</span>
+<span class="k">const</span> TYPE_COLORS = {
+  delay:   <span class="s">'#D97706'</span>, cancel: <span class="s">'#E8523A'</span>,
+  driver:  <span class="s">'#0B7C6E'</span>, stop:   <span class="s">'#003F87'</span>,
+  holiday: <span class="s">'#7C3AED'</span>, general:<span class="s">'#4A5568'</span>
+};
+
+<span class="c">/**
+ * Send FCM push notifications to all eligible students.
+ * Uses sendEachForMulticast for up to 500 tokens per call.
+ */</span>
+<span class="k">async function</span> <span class="n">dispatchPushAlert</span>(notificationId) {
+  <span class="k">const</span> { data: notif } = <span class="k">await</span> supabase
+    .from(<span class="s">'notifications'</span>)
+    .select(<span class="s">'*'</span>)
+    .eq(<span class="s">'id'</span>, notificationId)
+    .single();
+
+  <span class="c">// Fetch FCM tokens for recipients</span>
+  <span class="k">let</span> query = supabase
+    .from(<span class="s">'students'</span>)
+    .select(<span class="s">'id, users(id, fcm_token, fcm_token_updated_at)'</span>)
+    .eq(<span class="s">'is_active'</span>, <span class="k">true</span>)
+    .not(<span class="s">'users.fcm_token'</span>, <span class="s">'is'</span>, <span class="k">null</span>);
+
+  <span class="k">if</span> (notif.route_id) query = query.eq(<span class="s">'route_id'</span>, notif.route_id);
+
+  <span class="k">const</span> { data: students } = <span class="k">await</span> query;
+
+  <span class="c">// Filter out stale tokens (> 60 days old)</span>
+  <span class="k">const</span> cutoff = <span class="k">new</span> Date(Date.now() - <span class="v">60</span> * <span class="v">24</span> * <span class="v">60</span> * <span class="v">60</span> * <span class="v">1000</span>);
+  <span class="k">const</span> eligible = students.filter(s =>
+    s.users.fcm_token_updated_at > cutoff.toISOString()
+  );
+
+  <span class="k">const</span> tokens = eligible.map(s => s.users.fcm_token);
+  <span class="k">if</span> (!tokens.length) <span class="k">return</span> { sent: <span class="v">0</span> };
+
+  <span class="c">// Build FCM multicast message</span>
+  <span class="k">const</span> message = {
+    notification: {
+      title: notif.title,
+      body:  notif.message.substring(<span class="v">0</span>, <span class="v">200</span>)  <span class="c">// FCM body limit</span>
+    },
+    data: {
+      notification_id: notificationId,
+      alert_type:      notif.alert_type,
+      route_id:        notif.route_id ?? <span class="s">''</span>,
+      click_action:    <span class="s">'OPEN_NOTIFICATIONS'</span>   <span class="c">// handled in the app</span>
+    },
+    android: {
+      priority: notif.urgency === <span class="s">'high'</span> ? <span class="s">'high'</span> : <span class="s">'normal'</span>,
+      notification: {
+        color: TYPE_COLORS[notif.alert_type] ?? <span class="s">'#003F87'</span>,
+        channel_id: <span class="s">'schoolride_alerts'</span>,
+        sound: <span class="s">'default'</span>
+      }
+    },
+    apns: {  <span class="c">// iOS</span>
+      payload: { aps: { sound: <span class="s">'default'</span>, badge: <span class="v">1</span> } }
+    }
+  };
+
+  <span class="c">// Send in batches of 500 (FCM multicast limit)</span>
+  <span class="k">const</span> batches = chunkArray(tokens, <span class="v">500</span>);
+  <span class="k">let</span> successCount = <span class="v">0</span>, failureCount = <span class="v">0</span>;
+  <span class="k">const</span> stalTokens = [];
+
+  <span class="k">for</span> (<span class="k">const</span> batch <span class="k">of</span> batches) {
+    <span class="k">const</span> res = <span class="k">await</span> admin.messaging().sendEachForMulticast({
+      tokens: batch, ...message
+    });
+    successCount += res.successCount;
+    failureCount += res.failureCount;
+
+    <span class="c">// Collect invalid/expired tokens for cleanup</span>
+    res.responses.forEach((r, i) => {
+      <span class="k">if</span> (!r.success && [<span class="s">'messaging/invalid-registration-token'</span>,
+                         <span class="s">'messaging/registration-token-not-registered'</span>]
+                        .includes(r.error?.code)) {
+        staleTokens.push(batch[i]);
+      }
+    });
+  }
+
+  <span class="c">// Clean up stale tokens in DB</span>
+  <span class="k">if</span> (staleTokens.length) {
+    <span class="k">await</span> supabase.from(<span class="s">'users'</span>)
+      .update({ fcm_token: <span class="k">null</span> })
+      .in(<span class="s">'fcm_token'</span>, staleTokens);
+  }
+
+  <span class="k">return</span> { sent: tokens.length, successCount, failureCount };
+}
+
+<span class="k">const</span> <span class="n">chunkArray</span> = (arr, size) =>
+  Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+    arr.slice(i * size, i * size + size));
+
+module.exports = { dispatchPushAlert };</pre>
+    </div>
+
+    <h3 class="sub-title">Client-side: Register FCM Token (Next.js)</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">JavaScript</span><span class="code-label">lib/push-client.js</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre><span class="k">import</span> { initializeApp } from <span class="s">'firebase/app'</span>;
+<span class="k">import</span> { getMessaging, getToken, onMessage } from <span class="s">'firebase/messaging'</span>;
+
+<span class="k">const</span> firebaseConfig = {
+  apiKey:    process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_SENDER_ID,
+  appId:     process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+};
+
+<span class="k">const</span> app       = initializeApp(firebaseConfig);
+<span class="k">const</span> messaging = getMessaging(app);
+
+<span class="c">/**
+ * Call after login — requests permission and registers token with backend.
+ */</span>
+<span class="k">export async function</span> <span class="n">registerPushNotifications</span>(accessToken) {
+  <span class="k">if</span> (!(<span class="s">'Notification'</span> <span class="k">in</span> window)) <span class="k">return</span>;
+
+  <span class="k">const</span> permission = <span class="k">await</span> Notification.requestPermission();
+  <span class="k">if</span> (permission !== <span class="s">'granted'</span>) <span class="k">return</span>;
+
+  <span class="k">const</span> token = <span class="k">await</span> getToken(messaging, {
+    vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
+  });
+
+  <span class="c">// Register token with SchoolRide API</span>
+  <span class="k">await</span> fetch(<span class="s">'/api/v1/auth/fcm-token'</span>, {
+    method: <span class="s">'POST'</span>,
+    headers: { <span class="s">'Authorization'</span>: <span class="s">`Bearer ${accessToken}`</span>,
+               <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span> },
+    body: JSON.stringify({ fcm_token: token })
+  });
+
+  <span class="c">// Handle foreground messages (app open)</span>
+  onMessage(messaging, payload => {
+    <span class="n">showInAppNotification</span>(payload.notification);
+  });
+}
+
+<span class="k">function</span> <span class="n">showInAppNotification</span>({ title, body }) {
+  <span class="c">// Dispatch to your React notification state / toast system</span>
+  window.dispatchEvent(<span class="k">new</span> CustomEvent(<span class="s">'schoolride-push'</span>, { detail: { title, body } }));
+}</pre>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 7. AUTH ═══ -->
+  <div class="doc-section" id="auth">
+    <h2 class="sec-title"><span class="sec-num">7</span> Authentication &amp; SSO</h2>
+    <p class="sec-intro">Supabase Auth handles JWT generation and refresh. For the Ministry of Education SSO path (single login for all government education systems), SAML 2.0 is the standard.</p>
+
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Student self-registration or admin bulk import</div>
+        <div class="step-desc">Admin uploads a CSV of students → API creates <code>auth.users</code> entries via Supabase Admin SDK, then inserts rows into <code>users</code> and <code>students</code> tables. Students receive a welcome SMS with their temporary password.</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">JWT issued with custom claims</div>
+        <div class="step-desc">On login, Supabase issues a signed JWT. A database trigger populates a <code>raw_app_meta_data</code> claim with <code>{ "role": "student", "student_id": "uuid" }</code> — available in all API calls via <code>auth.jwt()</code>.</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Row Level Security enforces data isolation</div>
+        <div class="step-desc">Every Supabase query from the student app runs with their JWT. RLS policies ensure they can only read their own rows — no extra application-layer checks needed for basic data access.</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Ministry SSO via SAML 2.0 (Phase 2)</div>
+        <div class="step-desc">Supabase supports SAML 2.0 as an IdP. The Ministry's existing Active Directory / Azure AD becomes the identity provider. Students log in with their school Microsoft 365 credentials — no separate password needed.</div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">🔐</span>
+      <div class="callout-body"><strong>Refresh token strategy</strong> Access tokens expire in 1 hour. Refresh tokens last 7 days. On the client, intercept 401 responses, call <code>/auth/v1/token?grant_type=refresh_token</code>, and retry the original request. Supabase's JS client handles this automatically.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 8. WORKERS ═══ -->
+  <div class="doc-section" id="worker">
+    <h2 class="sec-title"><span class="sec-num">8</span> Background Workers</h2>
+    <p class="sec-intro">Supabase Edge Functions (Deno runtime) handle all scheduled and async work. Deployed with <code>supabase functions deploy</code>.</p>
+
+    <h3 class="sub-title">Notification Dispatcher Worker</h3>
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">TypeScript</span><span class="code-label">supabase/functions/dispatch-notifications/index.ts</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre><span class="k">import</span> { serve } from <span class="s">"https://deno.land/std@0.168.0/http/server.ts"</span>;
+<span class="k">import</span> { createClient } from <span class="s">"https://esm.sh/@supabase/supabase-js@2"</span>;
+
+<span class="c">// Triggered by Supabase DB webhook on notifications INSERT</span>
+serve(<span class="k">async</span> (req) => {
+  <span class="k">const</span> { record } = <span class="k">await</span> req.json(); <span class="c">// The new notification row</span>
+  <span class="k">const</span> supabase = createClient(
+    Deno.env.get(<span class="s">"SUPABASE_URL"</span>)!,
+    Deno.env.get(<span class="s">"SUPABASE_SERVICE_ROLE_KEY"</span>)!
+  );
+
+  <span class="c">// Skip if scheduled for future</span>
+  <span class="k">if</span> (record.scheduled_for && <span class="k">new</span> Date(record.scheduled_for) > <span class="k">new</span> Date()) {
+    <span class="k">return new</span> Response(<span class="s">"Scheduled — skipping"</span>, { status: <span class="v">200</span> });
+  }
+
+  <span class="c">// Fan out to SMS and/or Push workers in parallel</span>
+  <span class="k">const</span> dispatches = [];
+  <span class="k">if</span> (record.channels.includes(<span class="s">'sms'</span>)) {
+    dispatches.push(
+      fetch(<span class="s">`${Deno.env.get("API_BASE_URL")}/api/v1/internal/sms-dispatch`</span>, {
+        method: <span class="s">'POST'</span>,
+        body: JSON.stringify({ notification_id: record.id }),
+        headers: { <span class="s">'X-Internal-Key'</span>: Deno.env.get(<span class="s">'INTERNAL_API_KEY'</span>)! }
+      })
+    );
+  }
+  <span class="k">if</span> (record.channels.includes(<span class="s">'push'</span>)) {
+    dispatches.push(
+      fetch(<span class="s">`${Deno.env.get("API_BASE_URL")}/api/v1/internal/push-dispatch`</span>, {
+        method: <span class="s">'POST'</span>,
+        body: JSON.stringify({ notification_id: record.id }),
+        headers: { <span class="s">'X-Internal-Key'</span>: Deno.env.get(<span class="s">'INTERNAL_API_KEY'</span>)! }
+      })
+    );
+  }
+
+  <span class="k">await</span> Promise.allSettled(dispatches);
+  <span class="k">return new</span> Response(<span class="s">"Dispatched"</span>, { status: <span class="v">200</span> });
+});</pre>
+    </div>
+
+    <h3 class="sub-title">Other Scheduled Jobs</h3>
+    <table class="schema-table">
+      <thead><tr><th>Job</th><th>Schedule</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>retry-failed-sms</td><td>Every 30 min</td><td class="col-desc">Re-attempt delivery for receipts with status 'failed' within 2 hours of send</td></tr>
+        <tr><td>daily-schedule-push</td><td>5:30 AM weekdays</td><td class="col-desc">Push a "Bus departs in 60 min" reminder to all active students</td></tr>
+        <tr><td>stale-token-cleanup</td><td>Weekly</td><td class="col-desc">Null out FCM tokens not refreshed in 60+ days to keep lists clean</td></tr>
+        <tr><td>delivery-report</td><td>Daily 9 AM</td><td class="col-desc">Email summary of previous day's notification delivery rates to Transport Board</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ═══ 9. DEPLOYMENT ═══ -->
+  <div class="doc-section" id="deploy">
+    <h2 class="sec-title"><span class="sec-num">9</span> Deployment Architecture</h2>
+    <p class="sec-intro">A minimal, cost-effective production setup for a government digital service in Barbados. Estimated monthly cost at full scale: <strong>BBD $120–200/month</strong>.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">yaml</span><span class="code-label">Infrastructure overview</span><div class="code-dots"><div class="code-dot" style="background:#FF5F57"></div><div class="code-dot" style="background:#FFBD2E"></div><div class="code-dot" style="background:#28C840"></div></div></div>
+      <pre><span class="c"># ─── DNS ────────────────────────────────────────</span>
+schoolridebb.gov.bb     → Vercel (Next.js frontend)
+api.schoolridebb.gov.bb → Railway (Node.js API, auto-deploys on git push)
+db.schoolridebb.gov.bb  → Supabase (managed PostgreSQL, backups daily)
+
+<span class="c"># ─── CI / CD (GitHub Actions) ───────────────────</span>
+<span class="s">on push to main</span>:
+  - run tests
+  - deploy frontend  → vercel --prod
+  - deploy API       → railway up
+  - deploy functions → supabase functions deploy
+
+<span class="c"># ─── Monitoring ─────────────────────────────────</span>
+uptime:   UptimeRobot (free, 5-min checks → SMS alert to Transport Board)
+errors:   Sentry free tier (JS + Node error tracking)
+logs:     Railway built-in log viewer + Supabase log dashboard
+metrics:  Supabase dashboard (query performance, DB size, auth events)</pre>
+    </div>
+
+    <div class="callout danger">
+      <span class="callout-icon">🚨</span>
+      <div class="callout-body"><strong>Before go-live checklist</strong> (1) Register Sender ID with Digicel — 10 days lead time. (2) Obtain SSL certificate for gov.bb subdomain via Let's Encrypt. (3) Configure CORS to only allow your frontend domain. (4) Enable Supabase database backups (daily automated, 30-day retention). (5) Load test with 1,300 concurrent users before term-start. (6) Data protection: register with the Barbados Data Protection Act office before storing student personal data.</div>
+    </div>
+
+    <div class="callout info" style="margin-top:1rem;">
+      <span class="callout-icon">📋</span>
+      <div class="callout-body"><strong>Domain registration</strong> The .gov.bb namespace is managed by ICANN via the Barbados Telecommunications Unit. Submit an application to the Government Information Service (GIS) to register schoolridebb.gov.bb — this typically takes 2–4 weeks and requires Ministry of Education sign-off.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div style="text-align:center;padding:2rem 0;color:var(--text-soft);font-size:13px;">
+    SchoolRide Barbados — Backend Architecture Reference &nbsp;·&nbsp; v1.0.0 &nbsp;·&nbsp; Ministry of Education &amp; Transport Board
+  </div>
+
+</main>
+</div>
+
+<script>
+function toggleEp(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// Highlight active sidebar link on scroll
+const sections = document.querySelectorAll('[id]');
+const links    = document.querySelectorAll('.sn-link[href^="#"]');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
+  links.forEach(l => {
+    l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+  });
+}, { passive: true });
+</script>
+</body>
+</html>

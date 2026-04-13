@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SchoolRide — Route Map</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#003F87;--navy-dark:#002560;--navy-light:#1A5FA8;
+  --gold:#F4B942;--gold-light:#FDECC2;
+  --teal:#0B7C6E;--teal-light:#E6F9F3;
+  --coral:#E8523A;
+  --cream:#FEFCF7;--sand:#F5EDD8;
+  --text:#1A1A2E;--text-mid:#4A5568;--text-soft:#718096;
+  --white:#ffffff;
+  --r-sm:8px;--r-md:14px;--r-lg:22px;
+  --shadow:0 4px 24px rgba(0,63,135,0.10);
+  --shadow-lg:0 8px 40px rgba(0,63,135,0.16);
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);overflow:hidden;}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100vh;}
+
+/* Topbar */
+.topbar{
+  background:var(--navy);color:var(--white);
+  padding:0 1.25rem;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;z-index:200;
+}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.bus-icon{width:30px;height:30px;background:rgba(255,255,255,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.bus-icon svg{width:17px;height:17px;}
+.topbar-title{font-family:'DM Serif Display',serif;font-size:16px;}
+.topbar-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.pill{background:rgba(255,255,255,0.12);border:none;color:var(--white);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 12px;border-radius:20px;cursor:pointer;transition:background 0.2s;}
+.pill:hover{background:rgba(255,255,255,0.22);}
+.pill.gold{background:var(--gold);color:var(--navy);font-weight:600;}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ADE80;margin-right:5px;animation:pulse-dot 1.5s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* Main area */
+.main{display:flex;flex:1;overflow:hidden;position:relative;}
+
+/* ── MAP AREA ── */
+.map-area{flex:1;position:relative;overflow:hidden;background:#C8DFF5;}
+
+/* Barbados map SVG */
+#baj-map{width:100%;height:100%;display:block;}
+
+/* animated route line */
+.route-path{stroke:var(--navy);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:6 4;}
+.route-path-bg{stroke:rgba(0,63,135,0.15);stroke-width:10;fill:none;stroke-linecap:round;}
+.route-path-anim{animation:dash-move 1.8s linear infinite;}
+@keyframes dash-move{to{stroke-dashoffset:-20;}}
+
+/* Walking path dashed */
+.walk-path{stroke:var(--teal);stroke-width:2.5;fill:none;stroke-dasharray:4 3;stroke-linecap:round;}
+.walk-path-anim{animation:walk-dash 1.2s linear infinite;}
+@keyframes walk-dash{to{stroke-dashoffset:-14;}}
+
+/* Stop markers */
+.stop-marker{cursor:pointer;transition:transform 0.2s;}
+.stop-marker:hover{transform:scale(1.2);}
+.stop-marker.yours .stop-ring{stroke:var(--teal);stroke-width:2.5;fill:var(--teal);}
+.stop-marker.school .stop-ring{stroke:var(--navy);stroke-width:2.5;fill:var(--navy);}
+.stop-marker.regular .stop-ring{stroke:var(--navy-light);stroke-width:1.5;fill:white;}
+.stop-marker.start .stop-ring{stroke:var(--navy);stroke-width:2;fill:var(--gold);}
+.stop-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;fill:var(--navy);pointer-events:none;}
+
+/* Home marker */
+.home-marker{cursor:pointer;}
+.home-pulse{animation:home-pulse 2s ease-in-out infinite;}
+@keyframes home-pulse{0%,100%{r:14;opacity:0.15;}50%{r:20;opacity:0.05;}}
+
+/* Bus icon moving */
+#bus-vehicle{transition:cx 0.8s ease, cy 0.8s ease;}
+.bus-body{fill:var(--gold);stroke:var(--navy);stroke-width:1.5;}
+.bus-body-inner{fill:var(--navy);}
+
+/* Map controls */
+.map-controls{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:6px;z-index:50;}
+.map-btn{width:36px;height:36px;background:var(--white);border:none;border-radius:var(--r-sm);box-shadow:var(--shadow);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--navy);transition:background 0.15s,transform 0.1s;}
+.map-btn:hover{background:var(--sand);transform:scale(1.05);}
+
+/* Legend */
+.map-legend{position:absolute;bottom:12px;left:12px;background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow);padding:10px 14px;z-index:50;font-size:12px;}
+.legend-title{font-weight:600;color:var(--text-mid);margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;}
+.legend-row{display:flex;align-items:center;gap:7px;margin-bottom:4px;color:var(--text-mid);}
+.legend-row:last-child{margin-bottom:0;}
+.l-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.l-line{width:18px;height:3px;border-radius:2px;flex-shrink:0;}
+.l-dash{width:18px;height:0;border-bottom:2px dashed var(--teal);flex-shrink:0;}
+
+/* ── SIDE PANEL ── */
+.side-panel{
+  width:320px;flex-shrink:0;
+  background:var(--white);
+  border-left:1px solid rgba(0,63,135,0.08);
+  display:flex;flex-direction:column;
+  overflow:hidden;z-index:100;
+}
+@media(max-width:680px){
+  .side-panel{position:absolute;bottom:0;left:0;right:0;width:100%;height:54%;border-left:none;border-top:1px solid rgba(0,63,135,0.1);border-radius:20px 20px 0 0;}
+}
+
+.panel-tabs{display:flex;border-bottom:1px solid #EEF1F5;flex-shrink:0;}
+.tab-btn{flex:1;padding:12px 8px;font-size:12px;font-weight:600;color:var(--text-soft);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;transition:color 0.2s,border-color 0.2s;letter-spacing:0.03em;text-transform:uppercase;}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--navy);}
+
+.tab-content{display:none;flex:1;overflow-y:auto;padding:0;}
+.tab-content.active{display:block;}
+
+/* Your stop hero */
+.stop-hero{
+  background:var(--navy);color:var(--white);
+  padding:1.2rem 1.3rem 1rem;
+}
+.sh-label{font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.sh-name{font-family:'DM Serif Display',serif;font-size:21px;margin-bottom:6px;}
+.sh-meta{font-size:12px;color:rgba(255,255,255,0.6);}
+.sh-meta span{color:rgba(255,255,255,0.9);font-weight:500;}
+
+.time-row{display:flex;gap:10px;padding:0.9rem 1.3rem;border-bottom:1px solid #EEF1F5;}
+.time-box{flex:1;background:var(--cream);border-radius:var(--r-sm);padding:10px 12px;}
+.tb-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-soft);margin-bottom:4px;}
+.tb-val{font-size:18px;font-weight:600;color:var(--navy);}
+.tb-val.teal{color:var(--teal);}
+.tb-sub{font-size:11px;color:var(--text-soft);margin-top:2px;}
+
+/* stop list in panel */
+.panel-stops{padding:0.5rem 0;}
+.ps-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:9px 1.3rem;cursor:pointer;
+  transition:background 0.15s;position:relative;
+}
+.ps-item:hover{background:#F7FAFF;}
+.ps-item.yours{background:var(--teal-light);}
+.ps-item::after{
+  content:'';position:absolute;left:calc(1.3rem + 13px);top:34px;
+  width:2px;height:calc(100% - 18px);background:#E2E8F0;
+}
+.ps-item:last-child::after{display:none;}
+.ps-dot{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;z-index:1;}
+.ps-dot.start{background:var(--gold);color:var(--navy);}
+.ps-dot.reg{background:#E2E8F0;color:var(--text-mid);}
+.ps-dot.you{background:var(--teal);color:white;}
+.ps-dot.end{background:var(--navy);color:white;}
+.ps-info{flex:1;}
+.ps-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.2;}
+.ps-name.you{color:var(--teal);}
+.ps-sub{font-size:11px;color:var(--text-soft);margin-top:2px;}
+.ps-time{font-size:12px;font-weight:600;color:var(--text-mid);padding-top:3px;white-space:nowrap;}
+.ps-time.you{color:var(--teal);}
+.you-badge{display:inline-block;background:var(--teal);color:white;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:5px;vertical-align:middle;letter-spacing:0.03em;}
+
+/* Schedule tab */
+.sched-section{padding:0.8rem 1.3rem;}
+.sched-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-soft);margin-bottom:10px;}
+.sched-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F1F5F9;}
+.sched-row:last-child{border-bottom:none;}
+.sched-day{font-size:13px;color:var(--text-mid);}
+.sched-time{font-size:13px;font-weight:600;color:var(--navy);}
+.sched-time.today{color:var(--teal);}
+.today-tag{font-size:10px;background:var(--teal-light);color:var(--teal);padding:2px 7px;border-radius:10px;font-weight:600;margin-left:6px;}
+
+.alert-box{margin:0 1.3rem 1rem;background:#FFF8E6;border:1px solid #F4D47A;border-radius:var(--r-sm);padding:10px 12px;display:flex;gap:8px;}
+.ab-icon{font-size:14px;margin-top:1px;flex-shrink:0;}
+.ab-text{font-size:12px;color:#7A5A00;line-height:1.5;}
+.ab-text strong{font-weight:600;}
+
+/* Info tab */
+.info-section{padding:1rem 1.3rem;}
+.info-row{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;}
+.info-ico{width:32px;height:32px;background:var(--sand);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.info-ico svg{width:16px;height:16px;}
+.info-txt{flex:1;}
+.info-txt strong{font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:1px;}
+.info-txt span{font-size:12px;color:var(--text-soft);}
+.divider{height:1px;background:#EEF1F5;margin:0.5rem 0;}
+.contact-box{background:var(--navy);border-radius:var(--r-md);padding:1rem 1.2rem;margin-top:1rem;}
+.cb-title{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:8px;}
+.cb-line{font-size:13px;color:var(--white);margin-bottom:4px;}
+.cb-line span{color:var(--gold);font-weight:600;}
+
+/* scroll styling */
+.tab-content::-webkit-scrollbar{width:4px;}
+.tab-content::-webkit-scrollbar-thumb{background:rgba(0,63,135,0.15);border-radius:2px;}
+
+/* tooltip */
+.map-tooltip{
+  position:absolute;background:var(--white);border-radius:10px;
+  box-shadow:var(--shadow-lg);padding:10px 14px;
+  font-size:12px;pointer-events:none;z-index:150;
+  opacity:0;transition:opacity 0.18s;max-width:180px;
+  border-top:3px solid var(--navy);
+}
+.map-tooltip.show{opacity:1;}
+.tt-name{font-weight:600;font-size:13px;color:var(--navy);margin-bottom:2px;}
+.tt-time{color:var(--teal);font-weight:600;}
+.tt-sub{color:var(--text-soft);font-size:11px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <nav class="topbar">
+    <div class="topbar-left">
+      <div class="bus-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 11L5 5H19L21 11V17H19V19H17V17H7V19H5V17H3V11Z" fill="#F4B942"/><rect x="6" y="12" width="3" height="3" rx="1" fill="white"/><rect x="15" y="12" width="3" height="3" rx="1" fill="white"/><path d="M5 11H19" stroke="white" stroke-width="1.2"/></svg>
+      </div>
+      <div>
+        <div class="topbar-title">Route 12 — North</div>
+        <div class="topbar-sub">Speightstown → Harrison College</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span style="font-size:12px;color:rgba(255,255,255,0.7);"><span class="live-dot"></span>Live tracking</span>
+      <button class="pill gold" onclick="animateBus()">▶ Simulate Bus</button>
+      <button class="pill" onclick="resetBus()">Reset</button>
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- MAP -->
+    <div class="map-area">
+      <svg id="baj-map" viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="island-shadow">
+            <feDropShadow dx="2" dy="3" stdDeviation="4" flood-color="rgba(0,40,100,0.18)"/>
+          </filter>
+          <pattern id="sea-pat" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M0 10 Q5 5 10 10 Q15 15 20 10" stroke="rgba(255,255,255,0.25)" stroke-width="0.8" fill="none"/>
+          </pattern>
+        </defs>
+
+        <!-- Sea background -->
+        <rect width="700" height="520" fill="#A8CCEA"/>
+        <rect width="700" height="520" fill="url(#sea-pat)"/>
+
+        <!-- Compass rose -->
+        <g transform="translate(645,460)" opacity="0.5">
+          <circle r="18" fill="white" fill-opacity="0.6"/>
+          <text y="-6" text-anchor="middle" font-size="8" font-family="DM Sans" fill="#003F87" font-weight="600">N</text>
+          <path d="M0,-14 L3,-4 L0,-7 L-3,-4 Z" fill="#003F87"/>
+          <path d="M0,14 L3,4 L0,7 L-3,4 Z" fill="#718096"/>
+        </g>
+
+        <!-- Scale bar -->
+        <g transform="translate(30,490)">
+          <rect width="60" height="3" rx="1.5" fill="rgba(0,63,135,0.4)"/>
+          <rect x="60" width="60" height="3" rx="1.5" fill="rgba(0,63,135,0.2)"/>
+          <text y="-4" font-size="9" font-family="DM Sans" fill="#003F87" font-weight="500">0</text>
+          <text x="57" y="-4" font-size="9" font-family="DM Sans" fill="#003F87" font-weight="500">10</text>
+          <text x="114" y="-4" font-size="9" font-family="DM Sans" fill="#003F87" font-weight="500">20 km</text>
+        </g>
+
+        <!-- BARBADOS ISLAND SHAPE (simplified representative outline) -->
+        <g filter="url(#island-shadow)">
+          <path id="island" d="
+            M 290,42
+            C 310,35 340,38 365,48
+            C 395,60 420,72 440,88
+            C 465,108 480,130 488,158
+            C 495,180 496,205 492,228
+            C 488,252 478,272 466,292
+            C 452,315 436,334 418,350
+            C 400,367 380,380 360,390
+            C 338,401 315,408 292,412
+            C 268,416 244,414 222,406
+            C 198,397 178,382 162,364
+            C 146,346 136,322 132,298
+            C 128,274 130,248 138,224
+            C 146,200 160,178 178,160
+            C 196,142 218,128 242,116
+            C 262,106 278,50 290,42 Z
+          " fill="#8DC670" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <!-- terrain shading -->
+          <path d="M 300,80 C 320,75 350,85 370,100 C 390,115 400,140 395,160 C 390,180 375,195 355,200 C 335,205 312,198 296,184 C 278,168 272,145 278,124 C 284,104 295,83 300,80 Z" fill="rgba(100,160,60,0.4)"/>
+          <path d="M 220,200 C 240,185 265,190 275,210 C 285,230 275,255 258,265 C 240,275 218,268 208,250 C 198,232 202,212 220,200 Z" fill="rgba(100,160,60,0.3)"/>
+          <!-- parish borders hint -->
+          <path d="M 312,200 L 290,280 M 380,200 L 400,300 M 290,280 L 360,340" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-dasharray="3 3" fill="none"/>
+        </g>
+
+        <!-- ROAD NETWORK (background roads) -->
+        <g opacity="0.4" stroke="#FFFFFF" stroke-width="1.5" fill="none">
+          <!-- ABC Highway -->
+          <path d="M 310,380 L 330,340 L 345,295 L 350,240 L 340,190 L 320,150 L 300,120"/>
+          <!-- Highway 1 (west coast) -->
+          <path d="M 220,380 L 215,340 L 212,295 L 218,250 L 228,200 L 242,160 L 258,120 L 270,80"/>
+          <!-- Cross roads -->
+          <path d="M 220,300 L 290,290 L 360,295 L 420,310"/>
+          <path d="M 230,230 L 295,225 L 370,230 L 415,240"/>
+          <path d="M 245,165 L 310,160 L 375,165"/>
+        </g>
+
+        <!-- ═══ ROUTE 12 PATH ═══ -->
+        <!-- Background glow -->
+        <path class="route-path-bg" d="
+          M 258,92
+          L 248,120 L 238,148 L 228,175
+          L 222,208 L 218,240 L 220,268
+          L 228,295 L 238,318 L 248,340
+          L 258,358 L 268,372
+        "/>
+        <!-- Animated route line -->
+        <path class="route-path route-path-anim" d="
+          M 258,92
+          L 248,120 L 238,148 L 228,175
+          L 222,208 L 218,240 L 220,268
+          L 228,295 L 238,318 L 248,340
+          L 258,358 L 268,372
+        " stroke-dashoffset="0"/>
+
+        <!-- ═══ WALKING PATH (home → stop) ═══ -->
+        <path class="walk-path walk-path-anim" d="
+          M 295,245 L 283,248 L 270,250 L 258,252 L 248,255 L 240,260 L 232,265
+        " stroke-dashoffset="0"/>
+
+        <!-- HOME MARKER -->
+        <g class="home-marker" onclick="showTooltip('home', 295, 245)">
+          <circle cx="295" cy="245" r="18" fill="var(--teal)" class="home-pulse" opacity="0.12"/>
+          <circle cx="295" cy="245" r="11" fill="var(--teal)" opacity="0.2"/>
+          <circle cx="295" cy="245" r="7" fill="var(--teal)"/>
+          <path d="M 291,247 L 295,243 L 299,247 L 299,251 L 291,251 Z" fill="white" stroke="none"/>
+          <rect x="293" y="248" width="4" height="3" rx="0.5" fill="var(--teal)"/>
+          <text x="308" y="242" class="stop-label" fill="var(--teal)" font-size="10" font-weight="700">Home</text>
+          <text x="308" y="252" class="stop-label" fill="var(--text-soft)" font-size="9">Clapham Heights</text>
+        </g>
+
+        <!-- ═══ BUS STOPS ═══ -->
+
+        <!-- Stop 1: Speightstown Terminal (start) -->
+        <g class="stop-marker start" onclick="showTooltip('speightstown', 258, 92)">
+          <circle cx="258" cy="92" r="10" class="stop-ring" fill="var(--gold)" stroke="var(--navy)" stroke-width="2"/>
+          <text x="271" y="88" class="stop-label">Speightstown</text>
+          <text x="271" y="98" class="stop-label" style="fill:#718096;font-size:9px;">Terminal · Start</text>
+        </g>
+
+        <!-- Stop 2: Six Men's Bay -->
+        <g class="stop-marker regular" onclick="showTooltip('sixmens', 248, 120)">
+          <circle cx="248" cy="120" r="6" class="stop-ring"/>
+          <text x="258" y="118" class="stop-label">Six Men's Bay</text>
+        </g>
+
+        <!-- Stop 3: Holetown -->
+        <g class="stop-marker regular" onclick="showTooltip('holetown', 228, 175)">
+          <circle cx="228" cy="175" r="7" class="stop-ring"/>
+          <text x="238" y="173" class="stop-label">Holetown</text>
+        </g>
+
+        <!-- Stop 4: Paynes Bay -->
+        <g class="stop-marker regular" onclick="showTooltip('paynes', 221, 210)">
+          <circle cx="221" cy="210" r="6" class="stop-ring"/>
+          <text x="231" y="208" class="stop-label">Paynes Bay</text>
+        </g>
+
+        <!-- Stop 5: YOUR STOP — Clapham Main Rd -->
+        <g class="stop-marker yours" onclick="showTooltip('yours', 232, 265)">
+          <!-- pulse rings -->
+          <circle cx="232" cy="265" r="18" fill="var(--teal)" opacity="0.1" style="animation:home-pulse 2s ease-in-out infinite;"/>
+          <circle cx="232" cy="265" r="12" fill="var(--teal)" opacity="0.2"/>
+          <circle cx="232" cy="265" r="8" fill="var(--teal)" stroke="white" stroke-width="2.5"/>
+          <text x="244" y="261" class="stop-label" style="fill:var(--teal);font-size:11px;font-weight:700;">Clapham Main Rd</text>
+          <text x="244" y="272" class="stop-label" style="fill:var(--teal);font-size:9px;">← Your stop</text>
+        </g>
+
+        <!-- Stop 6: Fontabelle -->
+        <g class="stop-marker regular" onclick="showTooltip('fontabelle', 240, 318)">
+          <circle cx="240" cy="318" r="6" class="stop-ring"/>
+          <text x="250" y="316" class="stop-label">Fontabelle</text>
+        </g>
+
+        <!-- Stop 7: Harrison College (school) -->
+        <g class="stop-marker school" onclick="showTooltip('school', 268, 372)">
+          <circle cx="268" cy="372" r="10" class="stop-ring" fill="var(--navy)" stroke="var(--navy)" stroke-width="2"/>
+          <text x="281" y="368" class="stop-label" style="fill:var(--navy);font-weight:700;">Harrison College</text>
+          <text x="281" y="378" class="stop-label" style="fill:#718096;font-size:9px;">School terminus</text>
+        </g>
+
+        <!-- ═══ ANIMATED BUS ═══ -->
+        <g id="bus-vehicle">
+          <circle id="bus-pos" cx="258" cy="92" r="14" fill="rgba(0,63,135,0.12)"/>
+          <rect id="bus-body" x="250" y="84" width="16" height="10" rx="3" class="bus-body"/>
+          <rect x="252" y="86" width="5" height="3" rx="1" fill="rgba(255,255,255,0.7)"/>
+          <rect x="259" y="86" width="5" height="3" rx="1" fill="rgba(255,255,255,0.7)"/>
+          <circle cx="253" cy="95" r="2" fill="var(--navy)"/>
+          <circle cx="263" cy="95" r="2" fill="var(--navy)"/>
+          <text id="bus-label" x="258" y="108" text-anchor="middle" font-family="DM Sans" font-size="9" font-weight="700" fill="var(--navy)">R-47</text>
+        </g>
+
+        <!-- Bridgetown label -->
+        <text x="300" y="360" font-family="DM Serif Display" font-size="14" fill="rgba(0,63,135,0.4)" text-anchor="middle">Bridgetown</text>
+        <!-- Ocean labels -->
+        <text x="110" y="200" font-family="DM Serif Display" font-size="13" fill="rgba(0,60,120,0.35)" text-anchor="middle" transform="rotate(-8,110,200)">Caribbean Sea</text>
+        <text x="580" y="250" font-family="DM Serif Display" font-size="12" fill="rgba(0,60,120,0.35)" text-anchor="middle" transform="rotate(-8,580,250)">Atlantic Ocean</text>
+      </svg>
+
+      <!-- Tooltip -->
+      <div class="map-tooltip" id="map-tooltip">
+        <div class="tt-name" id="tt-name">Stop Name</div>
+        <div class="tt-time" id="tt-time">6:47 AM</div>
+        <div class="tt-sub" id="tt-sub">Tap stop on map</div>
+      </div>
+
+      <!-- Map controls -->
+      <div class="map-controls">
+        <button class="map-btn" title="Zoom in" onclick="zoomMap(1.2)">+</button>
+        <button class="map-btn" title="Zoom out" onclick="zoomMap(0.85)">−</button>
+        <button class="map-btn" title="Centre map" onclick="centreMap()" style="font-size:14px;">⊙</button>
+        <button class="map-btn" title="Your stop" onclick="focusYours()" style="font-size:13px;">★</button>
+      </div>
+
+      <!-- Legend -->
+      <div class="map-legend">
+        <div class="legend-title">Map Key</div>
+        <div class="legend-row"><div class="l-dot" style="background:var(--gold);"></div>Start / Terminal</div>
+        <div class="legend-row"><div class="l-dot" style="background:var(--navy-light);border:1.5px solid var(--navy-light);width:10px;height:10px;"></div>Route stop</div>
+        <div class="legend-row"><div class="l-dot" style="background:var(--teal);"></div>Your stop</div>
+        <div class="legend-row"><div class="l-dot" style="background:var(--navy);"></div>School</div>
+        <div class="legend-row"><div class="l-line" style="background:var(--navy);"></div>Bus route</div>
+        <div class="legend-row"><div class="l-dash"></div>Walk to stop</div>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL -->
+    <div class="side-panel">
+      <div class="panel-tabs">
+        <button class="tab-btn active" onclick="switchTab('stops',this)">Stops</button>
+        <button class="tab-btn" onclick="switchTab('schedule',this)">Schedule</button>
+        <button class="tab-btn" onclick="switchTab('info',this)">Route Info</button>
+      </div>
+
+      <!-- ── STOPS TAB ── -->
+      <div class="tab-content active" id="tab-stops">
+        <div class="stop-hero">
+          <div class="sh-label">Your assigned stop</div>
+          <div class="sh-name">Clapham Main Rd</div>
+          <div class="sh-meta">Bus Shelter · <span>0.4 km from home</span> · ~5 min walk</div>
+        </div>
+
+        <div class="time-row">
+          <div class="time-box">
+            <div class="tb-label">Pick-up time</div>
+            <div class="tb-val teal">6:47 AM</div>
+            <div class="tb-sub">Mon – Fri</div>
+          </div>
+          <div class="time-box">
+            <div class="tb-label">Bus arrives school</div>
+            <div class="tb-val">7:25 AM</div>
+            <div class="tb-sub">38 min ride</div>
+          </div>
+        </div>
+
+        <div class="alert-box" style="margin:0.8rem 1.3rem;">
+          <span class="ab-icon">⚠</span>
+          <div class="ab-text"><strong>Today +3 min delay</strong> — ABC Hwy roadworks near Warrens.</div>
+        </div>
+
+        <div class="panel-stops">
+          <div class="ps-item" onclick="highlightStop(258,92)">
+            <div class="ps-dot start">S</div>
+            <div class="ps-info">
+              <div class="ps-name">Speightstown Terminal</div>
+              <div class="ps-sub">Route departure</div>
+            </div>
+            <div class="ps-time">6:10 AM</div>
+          </div>
+          <div class="ps-item" onclick="highlightStop(248,120)">
+            <div class="ps-dot reg">2</div>
+            <div class="ps-info">
+              <div class="ps-name">Six Men's Bay</div>
+              <div class="ps-sub">Hwy 1 junction</div>
+            </div>
+            <div class="ps-time">6:20 AM</div>
+          </div>
+          <div class="ps-item" onclick="highlightStop(228,175)">
+            <div class="ps-dot reg">3</div>
+            <div class="ps-info">
+              <div class="ps-name">Holetown, 1st Ave</div>
+              <div class="ps-sub">Near Lime Grove</div>
+            </div>
+            <div class="ps-time">6:32 AM</div>
+          </div>
+          <div class="ps-item" onclick="highlightStop(221,210)">
+            <div class="ps-dot reg">4</div>
+            <div class="ps-info">
+              <div class="ps-name">Paynes Bay</div>
+              <div class="ps-sub">West coast shelter</div>
+            </div>
+            <div class="ps-time">6:40 AM</div>
+          </div>
+          <div class="ps-item yours" onclick="highlightStop(232,265)">
+            <div class="ps-dot you">★</div>
+            <div class="ps-info">
+              <div class="ps-name you">Clapham Main Rd <span class="you-badge">YOU</span></div>
+              <div class="ps-sub">Bus shelter · 0.4 km from home</div>
+            </div>
+            <div class="ps-time you">6:47 AM</div>
+          </div>
+          <div class="ps-item" onclick="highlightStop(240,318)">
+            <div class="ps-dot reg">6</div>
+            <div class="ps-info">
+              <div class="ps-name">Fontabelle</div>
+              <div class="ps-sub">Near roundabout</div>
+            </div>
+            <div class="ps-time">6:58 AM</div>
+          </div>
+          <div class="ps-item" onclick="highlightStop(268,372)" style="border-bottom:none;">
+            <div class="ps-dot end">🏫</div>
+            <div class="ps-info">
+              <div class="ps-name">Harrison College</div>
+              <div class="ps-sub">School terminus</div>
+            </div>
+            <div class="ps-time">7:25 AM</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCHEDULE TAB ── -->
+      <div class="tab-content" id="tab-schedule">
+        <div class="sched-section">
+          <div class="sched-title">Morning pick-up — Clapham Main Rd</div>
+          <div class="sched-row">
+            <span class="sched-day">Monday <span class="today-tag">Today</span></span>
+            <span class="sched-time today">6:47 AM</span>
+          </div>
+          <div class="sched-row"><span class="sched-day">Tuesday</span><span class="sched-time">6:47 AM</span></div>
+          <div class="sched-row"><span class="sched-day">Wednesday</span><span class="sched-time">6:47 AM</span></div>
+          <div class="sched-row"><span class="sched-day">Thursday</span><span class="sched-time">6:47 AM</span></div>
+          <div class="sched-row"><span class="sched-day">Friday</span><span class="sched-time">6:47 AM</span></div>
+          <div class="sched-row"><span class="sched-day" style="color:#CBD5E0;">Saturday</span><span class="sched-time" style="color:#CBD5E0;">No service</span></div>
+          <div class="sched-row"><span class="sched-day" style="color:#CBD5E0;">Sunday</span><span class="sched-time" style="color:#CBD5E0;">No service</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="sched-section">
+          <div class="sched-title">Afternoon return — Harrison College</div>
+          <div class="sched-row"><span class="sched-day">Mon – Fri</span><span class="sched-time">3:30 PM</span></div>
+          <div class="sched-row"><span class="sched-day">Early dismissal</span><span class="sched-time">12:00 PM</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="sched-section">
+          <div class="sched-title">Upcoming closures</div>
+          <div class="sched-row"><span class="sched-day">Apr 28 — National Heroes Day</span><span class="sched-time" style="color:#E8523A;">No service</span></div>
+        </div>
+      </div>
+
+      <!-- ── INFO TAB ── -->
+      <div class="tab-content" id="tab-info">
+        <div class="info-section">
+          <div class="info-row">
+            <div class="info-ico"><svg viewBox="0 0 20 20" fill="none"><path d="M3 11L5 5H15L17 11V15H15V16H13V15H7V16H5V15H3V11Z" fill="#003F87" opacity=".7"/><rect x="5" y="12" width="3" height="2" rx="0.5" fill="white"/><rect x="12" y="12" width="3" height="2" rx="0.5" fill="white"/></svg></div>
+            <div class="info-txt"><strong>Bus R-47</strong><span>30-seat Toyota Coaster · AC equipped</span></div>
+          </div>
+          <div class="info-row">
+            <div class="info-ico"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2C7.24 2 5 4.24 5 7c0 4.17 5 11 5 11s5-6.83 5-11c0-2.76-2.24-5-5-5z" fill="#003F87" opacity=".7"/><circle cx="10" cy="7" r="2" fill="white"/></svg></div>
+            <div class="info-txt"><strong>Total route length</strong><span>~22 km · 7 stops · 75 min full run</span></div>
+          </div>
+          <div class="info-row">
+            <div class="info-ico"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#003F87" stroke-width="1.5" opacity=".7"/><path d="M10 6v4l2.5 2.5" stroke="#003F87" stroke-width="1.5" stroke-linecap="round" opacity=".7"/></svg></div>
+            <div class="info-txt"><strong>Frequency</strong><span>1 morning run · 1 afternoon return</span></div>
+          </div>
+          <div class="info-row">
+            <div class="info-ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12v12H4z" stroke="#003F87" stroke-width="1.3" opacity=".7" rx="2"/><path d="M8 9l2 2 4-4" stroke="#003F87" stroke-width="1.3" stroke-linecap="round" opacity=".7"/></svg></div>
+            <div class="info-txt"><strong>Operator</strong><span>Transport Board of Barbados · Zone 2 – St. Michael</span></div>
+          </div>
+          <div class="divider"></div>
+          <div class="info-row">
+            <div class="info-ico"><svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h8" stroke="#003F87" stroke-width="1.5" stroke-linecap="round" opacity=".7"/></svg></div>
+            <div class="info-txt"><strong>Driver</strong><span>Mr. C. Alleyne · Driver ID: TB-4421</span></div>
+          </div>
+          <div class="info-row">
+            <div class="info-ico"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4l4 4-4 8 12-6-8-2z" fill="#003F87" opacity=".6"/></svg></div>
+            <div class="info-txt"><strong>Walk to stop</strong><span>0.4 km · ~5 min · Via Clapham Rd</span></div>
+          </div>
+          <div class="contact-box">
+            <div class="cb-title">Transport Board Contact</div>
+            <div class="cb-line">Hotline: <span>246-436-6820</span></div>
+            <div class="cb-line">SMS updates: <span>text ROUTE to 6820</span></div>
+            <div class="cb-line" style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:6px;">For route changes, call by 5:30 AM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Tooltip overlay -->
+<div class="map-tooltip" id="map-tooltip" style="position:fixed;"></div>
+
+<script>
+  // ── TAB SWITCHING ──
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  // ── TOOLTIPS ──
+  const tooltipData = {
+    speightstown: { name: 'Speightstown Terminal', time: '6:10 AM', sub: 'Route start · St. Peter' },
+    sixmens:      { name: "Six Men's Bay", time: '6:20 AM', sub: 'Highway 1 junction · St. Peter' },
+    holetown:     { name: 'Holetown, 1st Ave', time: '6:32 AM', sub: 'Near Lime Grove · St. James' },
+    paynes:       { name: 'Paynes Bay', time: '6:40 AM', sub: 'West coast shelter · St. James' },
+    yours:        { name: 'Clapham Main Rd ★', time: '6:47 AM', sub: 'Your stop · 0.4 km from home' },
+    fontabelle:   { name: 'Fontabelle', time: '6:58 AM', sub: 'Near roundabout · St. Michael' },
+    school:       { name: 'Harrison College', time: '7:25 AM', sub: 'School terminus · St. Michael' },
+    home:         { name: 'Your Home', time: 'Clapham Heights', sub: '0.4 km walk to your stop' }
+  };
+
+  function showTooltip(key, svgX, svgY) {
+    const d = tooltipData[key]; if (!d) return;
+    const svg = document.getElementById('baj-map');
+    const rect = svg.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    const scaleX = rect.width / vb.width;
+    const scaleY = rect.height / vb.height;
+    const px = rect.left + svgX * scaleX;
+    const py = rect.top + svgY * scaleY;
+    const tt = document.getElementById('map-tooltip');
+    document.getElementById('tt-name').textContent = d.name;
+    document.getElementById('tt-time').textContent = d.time;
+    document.getElementById('tt-sub').textContent = d.sub;
+    tt.style.left = (px + 16) + 'px';
+    tt.style.top  = (py - 10) + 'px';
+    tt.classList.add('show');
+    clearTimeout(tt._hide);
+    tt._hide = setTimeout(() => tt.classList.remove('show'), 3200);
+  }
+
+  document.getElementById('baj-map').addEventListener('click', function(e) {
+    if (e.target === this || e.target.id === 'island') {
+      document.getElementById('map-tooltip').classList.remove('show');
+    }
+  });
+
+  // ── BUS ANIMATION ──
+  const busRoute = [
+    { cx: 258, cy: 92  },
+    { cx: 248, cy: 120 },
+    { cx: 238, cy: 148 },
+    { cx: 228, cy: 175 },
+    { cx: 222, cy: 208 },
+    { cx: 218, cy: 240 },
+    { cx: 232, cy: 265 },
+    { cx: 240, cy: 295 },
+    { cx: 240, cy: 318 },
+    { cx: 252, cy: 345 },
+    { cx: 260, cy: 360 },
+    { cx: 268, cy: 372 }
+  ];
+
+  let busStep = 0;
+  let busTimer = null;
+
+  function moveBus(step) {
+    const pos = busRoute[step];
+    const bv = document.getElementById('bus-vehicle');
+    const bp = document.getElementById('bus-pos');
+    const bb = document.getElementById('bus-body');
+    const bl = document.getElementById('bus-label');
+    bp.setAttribute('cx', pos.cx);
+    bp.setAttribute('cy', pos.cy);
+    bb.setAttribute('x', pos.cx - 8);
+    bb.setAttribute('y', pos.cy - 6);
+    bl.setAttribute('x', pos.cx);
+    bl.setAttribute('y', pos.cy + 14);
+    // Show tooltip for named stop
+    const stopKeys = ['speightstown','sixmens',null,null,'holetown',null,'yours',null,'fontabelle',null,null,'school'];
+    if (stopKeys[step]) showTooltip(stopKeys[step], pos.cx, pos.cy);
+  }
+
+  function animateBus() {
+    clearInterval(busTimer);
+    busStep = 0;
+    moveBus(busStep);
+    busTimer = setInterval(() => {
+      busStep++;
+      if (busStep >= busRoute.length) { clearInterval(busTimer); return; }
+      moveBus(busStep);
+    }, 900);
+  }
+
+  function resetBus() {
+    clearInterval(busTimer);
+    busStep = 0;
+    moveBus(0);
+    document.getElementById('map-tooltip').classList.remove('show');
+  }
+
+  // ── ZOOM ──
+  let zoom = 1;
+  let panX = 0, panY = 0;
+  function zoomMap(factor) {
+    zoom = Math.min(3, Math.max(0.7, zoom * factor));
+    applyTransform();
+  }
+  function centreMap() { zoom = 1; panX = 0; panY = 0; applyTransform(); }
+  function focusYours() { zoom = 1.8; panX = -60; panY = -80; applyTransform(); }
+  function applyTransform() {
+    document.getElementById('baj-map').style.transform =
+      `scale(${zoom}) translate(${panX}px, ${panY}px)`;
+    document.getElementById('baj-map').style.transformOrigin = 'center center';
+    document.getElementById('baj-map').style.transition = 'transform 0.4s ease';
+  }
+
+  // ── PANEL STOP CLICK → highlight on map ──
+  function highlightStop(x, y) {
+    // Brief golden ring flash
+    const svg = document.getElementById('baj-map');
+    const flash = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    flash.setAttribute('cx', x); flash.setAttribute('cy', y);
+    flash.setAttribute('r', '20'); flash.setAttribute('fill', 'none');
+    flash.setAttribute('stroke', '#F4B942'); flash.setAttribute('stroke-width', '3');
+    flash.style.opacity = '1'; flash.style.transition = 'opacity 0.6s, r 0.6s';
+    svg.appendChild(flash);
+    setTimeout(() => { flash.style.opacity = '0'; }, 50);
+    setTimeout(() => svg.removeChild(flash), 700);
+  }
+
+  // init bus position
+  moveBus(0);
+</script>
+</body>
+</html>
