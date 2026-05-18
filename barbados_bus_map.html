@@ -3,367 +3,312 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SchoolRide — Barbados Live Route Map</title>
+<title>SchoolRide — Barbados GIS Transit Layer</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
 <style>
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-:root {
+:root{
   --navy:#003F87;
   --navy-dark:#002560;
   --navy-light:#1A5FA8;
   --gold:#F4B942;
-  --gold-light:#FDECC2;
   --teal:#0B7C6E;
-  --teal-light:#E6F9F3;
-  --coral:#E8523A;
   --cream:#FEFCF7;
   --sand:#F5EDD8;
-  --text:#1A1A2E;
-  --text-mid:#4A5568;
-  --text-soft:#718096;
   --white:#ffffff;
-  --r-sm:8px;
-  --r-md:14px;
-  --r-lg:22px;
-  --shadow:0 4px 24px rgba(0,63,135,0.10);
-  --shadow-lg:0 8px 40px rgba(0,63,135,0.16);
+  --text:#1A1A2E;
+  --text-soft:#718096;
+  --shadow:0 6px 30px rgba(0,63,135,0.16);
 }
 
-html, body {
-  height: 100%;
-  font-family: 'DM Sans', sans-serif;
-  background: var(--cream);
-  overflow: hidden;
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  font-family:'DM Sans',sans-serif;
+  background:var(--cream);
 }
 
-.app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+.app{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
 }
 
-.topbar {
-  background: var(--navy);
-  color: white;
-  height: 58px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.25rem;
-  flex-shrink: 0;
-  z-index: 1000;
+.topbar{
+  height:60px;
+  background:var(--navy);
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 1.25rem;
+  z-index:1200;
 }
 
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.topbar-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
 
-.bus-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
+.bus-badge{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.12);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:17px;
 }
 
-.topbar-title {
-  font-family: 'DM Serif Display', serif;
-  font-size: 17px;
+.top-title{
+  font-family:'DM Serif Display',serif;
+  font-size:18px;
 }
 
-.topbar-sub {
-  font-size: 11px;
-  color: rgba(255,255,255,0.7);
+.top-sub{
+  font-size:11px;
+  color:rgba(255,255,255,0.65);
 }
 
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.controls{
+  display:flex;
+  gap:10px;
 }
 
-.pill {
-  border: none;
-  border-radius: 999px;
-  padding: 8px 14px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 12px;
-  transition: 0.2s ease;
+.btn{
+  border:none;
+  border-radius:999px;
+  padding:9px 15px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:12px;
+  transition:0.2s ease;
 }
 
-.pill.gold {
-  background: var(--gold);
-  color: var(--navy);
+.btn.gold{
+  background:var(--gold);
+  color:var(--navy);
 }
 
-.pill.dark {
-  background: rgba(255,255,255,0.12);
-  color: white;
+.btn.dark{
+  background:rgba(255,255,255,0.12);
+  color:white;
 }
 
-.main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
+.main{
+  flex:1;
+  display:flex;
+  overflow:hidden;
 }
 
-.map-area {
-  flex: 1;
-  position: relative;
+.map-wrapper{
+  flex:1;
+  position:relative;
 }
 
-#map {
-  width: 100%;
-  height: 100%;
+#map{
+  width:100%;
+  height:100%;
 }
 
-.leaflet-container {
-  font-family: 'DM Sans', sans-serif;
+.side-panel{
+  width:340px;
+  background:white;
+  border-left:1px solid rgba(0,0,0,0.08);
+  overflow-y:auto;
+  z-index:1000;
 }
 
-.side-panel {
-  width: 340px;
-  background: white;
-  border-left: 1px solid rgba(0,0,0,0.08);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  z-index: 500;
+.hero{
+  background:var(--navy);
+  color:white;
+  padding:1.2rem;
 }
 
-@media(max-width: 820px) {
-  .side-panel {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 48%;
-    border-radius: 22px 22px 0 0;
+.hero-label{
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--gold);
+  font-weight:700;
+  margin-bottom:6px;
+}
+
+.hero-title{
+  font-family:'DM Serif Display',serif;
+  font-size:24px;
+}
+
+.hero-sub{
+  margin-top:8px;
+  color:rgba(255,255,255,0.75);
+  font-size:12px;
+}
+
+.stop-list{
+  padding-bottom:40px;
+}
+
+.stop-item{
+  padding:1rem 1.1rem;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid #EEF2F7;
+  cursor:pointer;
+  transition:0.2s ease;
+}
+
+.stop-item:hover{
+  background:#F8FBFF;
+}
+
+.stop-left{
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+
+.stop-dot{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:11px;
+  font-weight:700;
+}
+
+.stop-name{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+}
+
+.stop-sub{
+  font-size:11px;
+  color:var(--text-soft);
+  margin-top:2px;
+}
+
+.stop-time{
+  font-size:13px;
+  font-weight:700;
+  color:var(--navy);
+}
+
+.legend{
+  position:absolute;
+  left:16px;
+  bottom:16px;
+  background:white;
+  border-radius:14px;
+  box-shadow:var(--shadow);
+  padding:12px;
+  z-index:900;
+  font-size:12px;
+}
+
+.legend-title{
+  font-weight:700;
+  color:var(--navy);
+  margin-bottom:8px;
+}
+
+.legend-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+}
+
+.legend-dot{
+  width:11px;
+  height:11px;
+  border-radius:50%;
+}
+
+.leaflet-routing-container{
+  display:none;
+}
+
+.custom-popup .leaflet-popup-content-wrapper{
+  border-radius:16px;
+}
+
+.custom-popup .leaflet-popup-content{
+  margin:12px;
+  min-width:160px;
+}
+
+.popup-title{
+  font-weight:700;
+  color:var(--navy);
+  margin-bottom:4px;
+}
+
+.popup-time{
+  color:var(--teal);
+  font-weight:700;
+  font-size:13px;
+}
+
+.popup-sub{
+  color:var(--text-soft);
+  font-size:11px;
+  margin-top:4px;
+}
+
+.bus-svg{
+  width:34px;
+  height:34px;
+  transform-origin:center;
+}
+
+.bus-shell{
+  fill:#F4B942;
+  stroke:#003F87;
+  stroke-width:2;
+}
+
+.bus-window{
+  fill:white;
+}
+
+.leaflet-control-attribution{
+  font-size:10px;
+}
+
+@media(max-width:820px){
+  .side-panel{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    width:100%;
+    height:46%;
+    border-radius:24px 24px 0 0;
   }
-}
-
-.stop-hero {
-  background: var(--navy);
-  color: white;
-  padding: 1.2rem;
-}
-
-.sh-label {
-  color: var(--gold);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 5px;
-  font-weight: 700;
-}
-
-.sh-name {
-  font-family: 'DM Serif Display', serif;
-  font-size: 24px;
-}
-
-.sh-meta {
-  margin-top: 7px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.75);
-}
-
-.time-row {
-  display: flex;
-  gap: 10px;
-  padding: 1rem;
-}
-
-.time-box {
-  flex: 1;
-  background: var(--cream);
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.tb-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  color: var(--text-soft);
-  margin-bottom: 5px;
-  font-weight: 700;
-}
-
-.tb-val {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.tb-val.teal {
-  color: var(--teal);
-}
-
-.tb-sub {
-  margin-top: 4px;
-  font-size: 11px;
-  color: var(--text-soft);
-}
-
-.panel-stops {
-  padding-bottom: 40px;
-}
-
-.ps-item {
-  padding: 1rem 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #EEF2F7;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.ps-item:hover {
-  background: #F8FBFF;
-}
-
-.ps-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ps-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.ps-dot.start {
-  background: var(--gold);
-  color: var(--navy);
-}
-
-.ps-dot.reg {
-  background: var(--navy-light);
-}
-
-.ps-dot.you {
-  background: var(--teal);
-}
-
-.ps-dot.school {
-  background: var(--navy);
-}
-
-.ps-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.ps-sub {
-  font-size: 11px;
-  color: var(--text-soft);
-  margin-top: 2px;
-}
-
-.ps-time {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.legend {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  z-index: 600;
-  background: white;
-  border-radius: 14px;
-  padding: 12px;
-  box-shadow: var(--shadow-lg);
-  font-size: 12px;
-}
-
-.legend-title {
-  font-weight: 700;
-  margin-bottom: 8px;
-  color: var(--navy);
-}
-
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.legend-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-}
-
-.bus-marker {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--gold);
-  border: 3px solid var(--navy);
-  box-shadow: 0 0 0 6px rgba(244,185,66,0.22);
-}
-
-.custom-popup .leaflet-popup-content-wrapper {
-  border-radius: 14px;
-  padding: 2px;
-}
-
-.custom-popup .leaflet-popup-content {
-  margin: 12px;
-}
-
-.popup-title {
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 4px;
-}
-
-.popup-time {
-  color: var(--teal);
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.popup-sub {
-  color: var(--text-soft);
-  margin-top: 3px;
-  font-size: 11px;
 }
 </style>
 </head>
@@ -373,22 +318,23 @@ html, body {
 
   <nav class="topbar">
     <div class="topbar-left">
-      <div class="bus-icon">🚌</div>
+      <div class="bus-badge">🚌</div>
+
       <div>
-        <div class="topbar-title">Route 12 — North</div>
-        <div class="topbar-sub">Speightstown → Harrison College</div>
+        <div class="top-title">Route 12 — North</div>
+        <div class="top-sub">Speightstown → Harrison College</div>
       </div>
     </div>
 
-    <div class="topbar-right">
-      <button class="pill gold" onclick="animateBus()">▶ Simulate Bus</button>
-      <button class="pill dark" onclick="resetBus()">Reset</button>
+    <div class="controls">
+      <button class="btn gold" onclick="animateBus()">▶ Simulate Bus</button>
+      <button class="btn dark" onclick="resetBus()">Reset</button>
     </div>
   </nav>
 
   <div class="main">
 
-    <div class="map-area">
+    <div class="map-wrapper">
       <div id="map"></div>
 
       <div class="legend">
@@ -396,12 +342,12 @@ html, body {
 
         <div class="legend-row">
           <div class="legend-dot" style="background:#F4B942"></div>
-          Route Start
+          Terminal
         </div>
 
         <div class="legend-row">
           <div class="legend-dot" style="background:#1A5FA8"></div>
-          Standard Stop
+          Route Stop
         </div>
 
         <div class="legend-row">
@@ -418,27 +364,15 @@ html, body {
 
     <aside class="side-panel">
 
-      <div class="stop-hero">
-        <div class="sh-label">Your assigned stop</div>
-        <div class="sh-name">Clapham Main Rd</div>
-        <div class="sh-meta">0.4 km walk · Morning pickup · Barbados Transport Board</div>
-      </div>
-
-      <div class="time-row">
-        <div class="time-box">
-          <div class="tb-label">Pickup Time</div>
-          <div class="tb-val teal">6:47 AM</div>
-          <div class="tb-sub">Mon–Fri</div>
-        </div>
-
-        <div class="time-box">
-          <div class="tb-label">School Arrival</div>
-          <div class="tb-val">7:25 AM</div>
-          <div class="tb-sub">38 min ride</div>
+      <div class="hero">
+        <div class="hero-label">Assigned Stop</div>
+        <div class="hero-title">Clapham Main Rd</div>
+        <div class="hero-sub">
+          Real GIS Routing · Barbados Transit Prototype
         </div>
       </div>
 
-      <div class="panel-stops" id="stops-panel"></div>
+      <div class="stop-list" id="stopList"></div>
 
     </aside>
 
@@ -449,77 +383,79 @@ html, body {
 
 const map = L.map('map', {
   zoomControl: true,
-  attributionControl: true
+  minZoom: 10,
+  maxZoom: 18,
+  zoomSnap: 0.25
 }).setView([13.1939, -59.5432], 11);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+  }
+).addTo(map);
 
-const routeStops = [
+const stops = [
   {
-    name: 'Speightstown Terminal',
-    lat: 13.2503,
-    lng: -59.6436,
-    time: '6:10 AM',
-    type: 'start',
-    sub: 'Route start · St. Peter'
+    name:'Speightstown Terminal',
+    lat:13.2501,
+    lng:-59.6438,
+    type:'start',
+    time:'6:10 AM',
+    sub:'St. Peter Terminal'
   },
   {
-    name: "Six Men's Bay",
-    lat: 13.2340,
-    lng: -59.6420,
-    time: '6:20 AM',
-    type: 'regular',
-    sub: 'Highway 1 junction'
+    name:"Six Men's",
+    lat:13.2314,
+    lng:-59.6419,
+    type:'regular',
+    time:'6:20 AM',
+    sub:'Highway 1'
   },
   {
-    name: 'Holetown',
-    lat: 13.1860,
-    lng: -59.6370,
-    time: '6:32 AM',
-    type: 'regular',
-    sub: 'Near Limegrove'
+    name:'Holetown',
+    lat:13.1869,
+    lng:-59.6381,
+    type:'regular',
+    time:'6:32 AM',
+    sub:'Limegrove area'
   },
   {
-    name: 'Paynes Bay',
-    lat: 13.1544,
-    lng: -59.6375,
-    time: '6:40 AM',
-    type: 'regular',
-    sub: 'West coast shelter'
+    name:'Paynes Bay',
+    lat:13.1537,
+    lng:-59.6380,
+    type:'regular',
+    time:'6:40 AM',
+    sub:'West coast corridor'
   },
   {
-    name: 'Clapham Main Rd',
-    lat: 13.0976,
-    lng: -59.5959,
-    time: '6:47 AM',
-    type: 'you',
-    sub: 'Your stop · 0.4 km walk'
+    name:'Clapham Main Rd',
+    lat:13.1013,
+    lng:-59.5962,
+    type:'you',
+    time:'6:47 AM',
+    sub:'Assigned stop'
   },
   {
-    name: 'Fontabelle',
-    lat: 13.1035,
-    lng: -59.6202,
-    time: '6:58 AM',
-    type: 'regular',
-    sub: 'Near Bridgetown'
+    name:'Fontabelle',
+    lat:13.1032,
+    lng:-59.6197,
+    type:'regular',
+    time:'6:58 AM',
+    sub:'Bridgetown edge'
   },
   {
-    name: 'Harrison College',
-    lat: 13.1028,
-    lng: -59.6058,
-    time: '7:25 AM',
-    type: 'school',
-    sub: 'School terminus'
+    name:'Harrison College',
+    lat:13.1025,
+    lng:-59.6061,
+    type:'school',
+    time:'7:25 AM',
+    sub:'School terminus'
   }
 ];
 
-const stopPanel = document.getElementById('stops-panel');
-
-function getColor(type) {
-  switch(type) {
+function getColor(type){
+  switch(type){
     case 'start': return '#F4B942';
     case 'you': return '#0B7C6E';
     case 'school': return '#003F87';
@@ -527,119 +463,174 @@ function getColor(type) {
   }
 }
 
-routeStops.forEach((stop, index) => {
+const stopList = document.getElementById('stopList');
+
+const markers = [];
+
+stops.forEach((stop,index)=>{
 
   const marker = L.circleMarker([stop.lat, stop.lng], {
-    radius: stop.type === 'you' ? 11 : 8,
-    fillColor: getColor(stop.type),
-    color: '#fff',
-    weight: 3,
-    fillOpacity: 1
+    radius: stop.type === 'you' ? 10 : 7,
+    fillColor:getColor(stop.type),
+    color:'#ffffff',
+    weight:3,
+    fillOpacity:1
   }).addTo(map);
 
   marker.bindPopup(`
     <div class="popup-title">${stop.name}</div>
     <div class="popup-time">${stop.time}</div>
     <div class="popup-sub">${stop.sub}</div>
-  `, {
-    className: 'custom-popup'
-  });
+  `,{ className:'custom-popup' });
 
-  const row = document.createElement('div');
-  row.className = 'ps-item';
+  markers.push(marker);
 
-  row.innerHTML = `
-    <div class="ps-left">
-      <div class="ps-dot ${stop.type === 'regular' ? 'reg' : stop.type}">
+  const item = document.createElement('div');
+  item.className = 'stop-item';
+
+  item.innerHTML = `
+    <div class="stop-left">
+
+      <div class="stop-dot"
+        style="background:${getColor(stop.type)}">
         ${index + 1}
       </div>
 
       <div>
-        <div class="ps-name">${stop.name}</div>
-        <div class="ps-sub">${stop.sub}</div>
+        <div class="stop-name">${stop.name}</div>
+        <div class="stop-sub">${stop.sub}</div>
       </div>
+
     </div>
 
-    <div class="ps-time">${stop.time}</div>
+    <div class="stop-time">${stop.time}</div>
   `;
 
-  row.onclick = () => {
+  item.onclick = () => {
     map.flyTo([stop.lat, stop.lng], 14, {
-      duration: 1.5
+      duration:1.4
     });
 
     marker.openPopup();
   };
 
-  stopPanel.appendChild(row);
+  stopList.appendChild(item);
 });
 
-const routeLine = L.polyline(
-  routeStops.map(stop => [stop.lat, stop.lng]),
-  {
-    color: '#003F87',
-    weight: 6,
-    opacity: 0.85,
-    lineJoin: 'round'
-  }
-).addTo(map);
+const routingControl = L.Routing.control({
 
-map.fitBounds(routeLine.getBounds(), {
-  padding: [40, 40]
-});
+  waypoints: stops.map(stop =>
+    L.latLng(stop.lat, stop.lng)
+  ),
+
+  routeWhileDragging:false,
+  addWaypoints:false,
+  draggableWaypoints:false,
+  fitSelectedRoutes:true,
+  show:false,
+
+  lineOptions:{
+    styles:[
+      {
+        color:'#003F87',
+        opacity:0.95,
+        weight:7
+      },
+      {
+        color:'#F4B942',
+        opacity:0.55,
+        weight:12
+      }
+    ]
+  },
+
+  createMarker: () => null
+
+}).addTo(map);
 
 const busIcon = L.divIcon({
-  className: '',
-  html: `<div class="bus-marker"></div>`,
-  iconSize: [24,24],
-  iconAnchor: [12,12]
+  className:'',
+  html:`
+    <svg class="bus-svg" viewBox="0 0 64 64">
+      <rect x="10" y="14" width="44" height="30" rx="10" class="bus-shell"/>
+      <rect x="16" y="20" width="12" height="8" rx="2" class="bus-window"/>
+      <rect x="36" y="20" width="12" height="8" rx="2" class="bus-window"/>
+      <circle cx="20" cy="48" r="5" fill="#003F87"/>
+      <circle cx="44" cy="48" r="5" fill="#003F87"/>
+    </svg>
+  `,
+  iconSize:[34,34],
+  iconAnchor:[17,17]
 });
 
 let busMarker = L.marker(
-  [routeStops[0].lat, routeStops[0].lng],
+  [stops[0].lat, stops[0].lng],
   { icon: busIcon }
 ).addTo(map);
 
-let animationIndex = 0;
-let animationTimer = null;
+let routeCoordinates = [];
+let animationFrame = null;
+let currentIndex = 0;
 
-function animateBus() {
+routingControl.on('routesfound', function(e){
 
-  clearInterval(animationTimer);
-  animationIndex = 0;
+  const route = e.routes[0];
 
-  animationTimer = setInterval(() => {
+  routeCoordinates = route.coordinates;
 
-    animationIndex++;
+  map.fitBounds(L.latLngBounds(routeCoordinates), {
+    padding:[50,50]
+  });
+});
 
-    if(animationIndex >= routeStops.length) {
-      clearInterval(animationTimer);
+function animateBus(){
+
+  if(!routeCoordinates.length) return;
+
+  cancelAnimationFrame(animationFrame);
+
+  currentIndex = 0;
+
+  function move(){
+
+    if(currentIndex >= routeCoordinates.length){
       return;
     }
 
-    const stop = routeStops[animationIndex];
+    const point = routeCoordinates[currentIndex];
 
-    busMarker.setLatLng([stop.lat, stop.lng]);
+    busMarker.setLatLng(point);
 
-    map.flyTo([stop.lat, stop.lng], 13, {
-      duration: 1.2
-    });
+    if(currentIndex % 15 === 0){
+      map.panTo(point, {
+        animate:true,
+        duration:0.5
+      });
+    }
 
-  }, 1800);
+    currentIndex += 1;
+
+    animationFrame = requestAnimationFrame(move);
+  }
+
+  move();
 }
 
-function resetBus() {
-  clearInterval(animationTimer);
+function resetBus(){
+
+  cancelAnimationFrame(animationFrame);
 
   busMarker.setLatLng([
-    routeStops[0].lat,
-    routeStops[0].lng
+    stops[0].lat,
+    stops[0].lng
   ]);
 
   map.flyTo([
     13.1939,
     -59.5432
-  ], 11);
+  ], 11, {
+    duration:1.4
+  });
 }
 
 </script>
